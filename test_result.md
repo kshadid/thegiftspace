@@ -59,6 +59,8 @@
 ## agent_communication:
 ##     -agent: "main"
 ##     -message: "Fixed auth forms to trigger API calls via explicit onClick handlers with error toasts. Please rerun frontend E2E tests."
+##     -agent: "testing"
+##     -message: "CRITICAL ISSUE FOUND: Auth form submission completely broken. Form renders correctly, fields can be filled, but Create account button does not trigger any API calls. No network requests to backend observed. This blocks all protected functionality. Need immediate fix to button click handlers in Auth.jsx."
 
 #====================================================================================================
 # END - Testing Protocol - DO NOT EDIT OR REMOVE THIS SECTION
