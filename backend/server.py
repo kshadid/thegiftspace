@@ -792,7 +792,7 @@ async def update_fund(registry_id: str, fund_id: str, body: FundIn, current: Use
     if not fund:
         raise HTTPException(status_code=404, detail="Fund not found")
     
-    update_data = body.model_dump()
+    update_data = body.model_dump(exclude={'id'})  # Exclude id from update
     update_data["updated_at"] = datetime.utcnow()
     
     await db.funds.update_one({"id": fund_id}, {"$set": update_data})
