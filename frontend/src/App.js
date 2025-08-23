@@ -9,8 +9,14 @@ import AuthPage from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import AdminPage from "./pages/Admin";
 import AdminRegistryDetail from "./pages/AdminRegistryDetail";
+import TermsPage from "./pages/Terms";
+import PrivacyPage from "./pages/Privacy";
+import Footer from "./components/layout/Footer";
+import CookieBanner from "./components/CookieBanner";
 import { Toaster } from "./components/ui/toaster";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { I18nProvider } from "./i18n/index";
+import { initAnalytics } from "./lib/analytics";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -26,23 +32,30 @@ function App() {
       }
     };
     helloWorldApi();
+    initAnalytics();
   }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<RegistryLanding />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
-            <Route path="/admin" element={<Protected><AdminPage /></Protected>} />
-            <Route path="/admin/r/:id" element={<Protected><AdminRegistryDetail /></Protected>} />
-            <Route path="/create" element={<Protected><CreateRegistry /></Protected>} />
-            <Route path="/r/:slug" element={<PublicRegistry />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <I18nProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<RegistryLanding />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
+              <Route path="/admin" element={<Protected><AdminPage /></Protected>} />
+              <Route path="/admin/r/:id" element={<Protected><AdminRegistryDetail /></Protected>} />
+              <Route path="/create" element={<Protected><CreateRegistry /></Protected>} />
+              <Route path="/r/:slug" element={<PublicRegistry />} />
+              <Route path="/legal/terms" element={<TermsPage />} />
+              <Route path="/legal/privacy" element={<PrivacyPage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <Footer />
+            <CookieBanner />
+          </BrowserRouter>
+        </I18nProvider>
       </AuthProvider>
       <Toaster />
     </div>
