@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Backend API Testing Suite for Honeymoon Registry MVP
-Tests all core backend endpoints with realistic data
+Tests all core backend endpoints with realistic data and JWT authentication
 """
 
 import requests
@@ -10,6 +10,7 @@ import uuid
 from datetime import datetime, timedelta
 import os
 from pathlib import Path
+import time
 
 # Load environment variables to get the backend URL
 def load_env_file(file_path):
