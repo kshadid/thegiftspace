@@ -11,7 +11,9 @@ const heroImg =
 
 export default function RegistryLanding() {
   React.useEffect(() => {
-    ensureDefaults();
+    if (!getAccessToken()) {
+      ensureDefaults();
+    }
   }, []);
   const navigate = useNavigate();
 
