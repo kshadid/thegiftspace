@@ -30,15 +30,33 @@ print(f"Testing admin endpoints at: {API_BASE}")
 def test_admin_endpoints():
     session = requests.Session()
     
-    # Try to register a new admin user with a unique email
-    unique_id = str(uuid.uuid4())[:8]
-    admin_email = f"admin.{unique_id}@gmail.com"
+    # Try to register a new admin user with the exact admin email
+    print(f"\n=== Attempting to register with admin email: kshadid@gmail.com ===")
     
-    print(f"\n=== Registering new admin user: {admin_email} ===")
+    # First, let's try to delete the existing user from the database
+    try:
+        import asyncio
+        from motor.motor_asyncio import AsyncIOMotorClient
+        
+        async def delete_existing_admin():
+            mongo_url = 'mongodb://localhost:27017'
+            client = AsyncIOMotorClient(mongo_url)
+            db = client['test_database']
+            
+            result = await db.users.delete_one({"email": "kshadid@gmail.com"})
+            print(f"Deleted {result.deleted_count} existing admin user(s)")
+            
+            client.close()
+        
+        asyncio.run(delete_existing_admin())
+        
+    except Exception as e:
+        print(f"Could not delete existing user: {str(e)}")
     
+    # Now try to register the admin user
     user_data = {
-        "name": "Test Admin",
-        "email": admin_email,
+        "name": "Khalid Shadid",
+        "email": "kshadid@gmail.com",
         "password": "AdminPassword123!"
     }
     
@@ -53,24 +71,36 @@ def test_admin_endpoints():
             
             print(f"✅ Admin user registered successfully")
             
-            # Test admin endpoints
-            endpoints_to_test = [
-                ("/admin/me", "GET"),
-                ("/admin/stats", "GET"),
-                ("/admin/metrics", "GET"),
-                ("/admin/users", "GET"),
-                ("/admin/registries", "GET")
-            ]
+            # Test admin/me first to confirm admin status
+            me_response = session.get(f"{API_BASE}/admin/me")
+            print(f"Admin/me response: {me_response.status_code} - {me_response.text}")
             
-            for endpoint, method in endpoints_to_test:
-                try:
-                    if method == "GET":
-                        resp = session.get(f"{API_BASE}{endpoint}")
+            if me_response.status_code == 200:
+                me_data = me_response.json()
+                if me_data.get('is_admin'):
+                    print("✅ User confirmed as admin")
                     
-                    print(f"{endpoint}: {resp.status_code} - {resp.text[:200]}...")
+                    # Test admin endpoints
+                    endpoints_to_test = [
+                        ("/admin/stats", "GET"),
+                        ("/admin/metrics", "GET"),
+                        ("/admin/users", "GET"),
+                        ("/admin/registries", "GET")
+                    ]
                     
-                except Exception as e:
-                    print(f"{endpoint}: ERROR - {str(e)}")
+                    for endpoint, method in endpoints_to_test:
+                        try:
+                            if method == "GET":
+                                resp = session.get(f"{API_BASE}{endpoint}")
+                            
+                            print(f"{endpoint}: {resp.status_code} - {resp.text[:200]}...")
+                            
+                        except Exception as e:
+                            print(f"{endpoint}: ERROR - {str(e)}")
+                else:
+                    print("❌ User is not admin despite using admin email")
+            else:
+                print(f"❌ Could not verify admin status: {me_response.status_code}")
         
         else:
             print(f"❌ Failed to register admin user: {response.status_code} - {response.text}")
