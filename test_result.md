@@ -81,6 +81,9 @@
 ##         -working: true
 ##         -agent: "main"
 ##         -comment: "Added /registries/{id}/analytics and /registries/{id}/contributions/export/csv; protected; tested locally via FE." 
+##         -working: true
+##         -agent: "testing"
+##         -comment: "Analytics endpoint working correctly - returns total, count, average, by_fund[], daily[] with accurate data. CSV export working - returns text/csv with proper headers: created_at,fund_title,amount,name,message,method,public." 
 ##   - task: "Indexes & rate limiting"
 ##     implemented: true
 ##     working: true
