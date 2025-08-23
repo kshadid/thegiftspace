@@ -45,6 +45,14 @@ MAX_UPLOAD_SIZE = 20 * 1024 * 1024  # 20MB
 DEFAULT_ADMIN_EMAILS = {"kshadid@gmail.com"}
 ADMIN_EMAILS = set([e.strip().lower() for e in os.environ.get('ADMIN_EMAILS', '').split(',') if e.strip()]) or DEFAULT_ADMIN_EMAILS
 
+# Email configuration
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
+FROM_EMAIL = os.environ.get('FROM_EMAIL', 'noreply@yourdomain.com')
+
+# Configure Resend if API key is provided
+if RESEND_API_KEY:
+    resend.api_key = RESEND_API_KEY
+
 # Create the main app without a prefix
 app = FastAPI()
 
