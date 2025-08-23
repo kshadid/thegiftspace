@@ -12,6 +12,7 @@ import { Checkbox } from "../components/ui/checkbox";
 import { useToast } from "../hooks/use-toast";
 import { getPublicRegistry, createContribution } from "../lib/api";
 import { loadRegistry as loadLocalRegistry, loadFunds as loadLocalFunds, sumForFund as sumLocal, totalReceived as totalLocal } from "../mock/mock";
+import { getAccessToken } from "../lib/api";
 
 const themeClasses = {
   modern: { overlay: "bg-black/40", title: "text-white", subtle: "text-white/90" },
