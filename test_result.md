@@ -55,6 +55,8 @@
 ##   stuck_tasks: []
 ##   test_all: false
 ##   test_priority: "high_first"
+##   stuck_tasks:
+##     - "Auth UI + Protected routes"
 ##
 ## agent_communication:
 ##     -agent: "main"
