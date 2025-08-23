@@ -4,6 +4,7 @@ import { Button } from "../components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../components/ui/accordion";
 import { ArrowRight, Gift, CreditCard, Plane, HeartHandshake } from "lucide-react";
 import { ensureDefaults } from "../mock/mock";
+import { getAccessToken } from "../lib/api";
 
 const heroImg =
   "https://images.unsplash.com/photo-1520440718111-45fe694b330a?q=80&amp;w=1920&amp;auto=format&amp;fit=crop";
