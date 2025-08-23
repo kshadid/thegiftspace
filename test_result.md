@@ -98,6 +98,17 @@
 ##         -working: true
 ##         -agent: "testing"
 ##         -comment: "TESTED: /api/admin/metrics endpoint working perfectly. Returns correct structure with active_events: 6, active_gifts: 7, average_amount: 561.11, max_amount: 1000.0. All admin endpoints confirmed working with proper authentication and /api prefix."
+##   - task: "Missing registry CRUD endpoints"
+##     implemented: false
+##     working: false
+##     file: "/app/backend/server.py"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: false
+##     status_history:
+##         -working: false
+##         -agent: "testing"
+##         -comment: "CRITICAL: Basic registry endpoints missing from server.py - /api/registries (POST), /api/registries/mine (GET), /api/registries/{id}/contributions (GET), /api/registries/{id}/audit (GET) all return 404. Server.py has comment 'Other routes remain unchanged below' but routes are missing. This prevents creating registries and accessing contributions/audit as admin."
 ## frontend:
 ##   - task: "Admin Overview + Registry Detail page"
 ##     implemented: true
