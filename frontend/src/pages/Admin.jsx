@@ -72,7 +72,10 @@ export default function AdminPage() {
                 {(stats?.last_users || []).map((u) => (
                   <li key={u.id} className="rounded border p-2 flex items-center justify-between">
                     <span>{u.name} — {u.email}</span>
-                    <span className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleString()}</span>
+                    <span className="text-xs flex items-center gap-2">
+                      <span className="text-muted-foreground">{new Date(u.created_at).toLocaleString()}</span>
+                      <Link className="underline" to={`/admin/u/${u.id}`}>Manage</Link>
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -115,7 +118,10 @@ export default function AdminPage() {
                 {users.map((u) => (
                   <li key={u.id} className="rounded border p-2 flex items-center justify-between">
                     <span>{u.name} — {u.email}</span>
-                    <span className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleString()}</span>
+                    <span className="text-xs flex items-center gap-2">
+                      <span className="text-muted-foreground">{new Date(u.created_at).toLocaleString()}</span>
+                      <Link className="underline" to={`/admin/u/${u.id}`}>Manage</Link>
+                    </span>
                   </li>
                 ))}
               </ul>

@@ -278,7 +278,7 @@ async def login(body: LoginBody, request: Request):
             user["password_hash"] = new_hash
         else:
             raise HTTPException(status_code=401, detail="Invalid credentials")
-    token = create_access_token(user["id"])
+    token = create_access_token(user["id"]) 
     return TokenResponse(access_token=token, user=UserPublic(id=user["id"], name=user.get("name", email), email=user["email"]))
 
 @api_router.get("/auth/me", response_model=UserPublic)
@@ -306,12 +306,12 @@ async def admin_stats(current: UserPublic = Depends(get_user_from_token)):
     for u in last_users:
         u.pop("_id", None)
     last_regs = await db.registries.find({}).sort("created_at", -1).to_list(10)
-    owner_ids = list({r['owner_id'] for r in last_regs})
+    owner_ids = list({r['owner_id'] for r in last_regs if 'owner_id' in r})
     owners = {u['id']: u for u in await db.users.find({"id": {"$in": owner_ids}}).to_list(len(owner_ids))}
     out_regs = []
     for r in last_regs:
         r.pop("_id", None)
-        out_regs.append({**r, "owner_email": owners.get(r['owner_id'], {}).get('email')})
+        out_regs.append({**r, "owner_email": owners.get(r.get('owner_id',''), {}).get('email')})
     top_funds_raw = await db.contributions.aggregate([
         {"$group": {"_id": "$fund_id", "sum": {"$sum": "$amount"}, "count": {"$sum": 1}}},
         {"$sort": {"sum": -1}},
@@ -365,6 +365,25 @@ async def admin_users_lookup(ids: str, current: UserPublic = Depends(get_user_fr
         it.pop("_id", None)
     return items
 
+@api_router.get("/admin/users/{user_id}/detail")
+async def admin_user_detail(user_id: str, current: UserPublic = Depends(get_user_from_token)):
+    if not await is_admin_user(current):
+        raise HTTPException(status_code=403, detail="Admin only")
+    usr = await db.users.find_one({"id": user_id}, {"password_hash": 0})
+    if not usr:
+        raise HTTPException(status_code=404, detail="User not found")
+    usr.pop("_id", None)
+    owned = await db.registries.find({"owner_id": user_id}).sort("created_at", -1).to_list(100)
+    for r in owned:
+        r.pop("_id", None)
+    collab = await db.registries.find({"collaborators": {"$in": [user_id]}}).sort("created_at", -1).to_list(100)
+    for r in collab:
+        r.pop("_id", None)
+    recent_audit = await db.audit_logs.find({"user_id": user_id}).sort("created_at", -1).to_list(20)
+    for a in recent_audit:
+        a.pop("_id", None)
+    return {"user": usr, "registries_owned": owned, "registries_collab": collab, "recent_audit": recent_audit}
+
 @api_router.get("/admin/registries")
 async def admin_registries(query: Optional[str] = None, current: UserPublic = Depends(get_user_from_token)):
     if not await is_admin_user(current):
@@ -376,13 +395,12 @@ async def admin_registries(query: Optional[str] = None, current: UserPublic = De
             {"couple_names": {"$regex": query, "$options": "i"}},
         ]}
     regs = await db.registries.find(q).sort("created_at", -1).to_list(100)
-    owner_ids = list({r.get('owner_id') for r in regs if r.get('owner_id')})
-    owners = {u['id']: u for u in await db.users.find({"id": {"$in": owner_ids}}).to_list(len(owner_ids))} if owner_ids else {}
+    owner_ids = list({r['owner_id'] for r in regs if 'owner_id' in r})
+    owners = {u['id']: u for u in await db.users.find({"id": {"$in": owner_ids}}).to_list(len(owner_ids))}
     out = []
     for r in regs:
         r.pop("_id", None)
-        owner_id = r.get('owner_id')
-        out.append({**r, "owner_email": owners.get(owner_id, {}).get('email') if owner_id else None})
+        out.append({**r, "owner_email": owners.get(r.get('owner_id',''), {}).get('email')})
     return out
 
 class LockBody(BaseModel):
@@ -404,365 +422,19 @@ async def admin_registry_funds(registry_id: str, current: UserPublic = Depends(g
     items = await db.funds.find({"registry_id": registry_id}).sort("order", 1).to_list(1000)
     return [Fund(**{k: v for k, v in it.items() if k != "_id"}) for it in items]
 
-# --- Other routes remain unchanged below (registries, funds, contributions, analytics, collaborators, audit, uploads, CORS) ---
-# --- Public & Owner/Collab/Admin Routes ---
+# --- Status ---
+@api_router.post("/status", response_model=StatusCheck)
+async def create_status_check(input: StatusCheckCreate):
+    status_obj = StatusCheck(client_name=input.client_name)
+    await db.status_checks.insert_one(status_obj.model_dump())
+    return status_obj
 
-@api_router.post("/registries", response_model=Registry, status_code=201)
-async def create_registry(payload: RegistryCreate, current: UserPublic = Depends(get_user_from_token)):
-    existing = await db.registries.find_one({"slug": payload.slug})
-    if existing:
-        raise HTTPException(status_code=409, detail="Slug already in use")
-    reg = Registry(**payload.model_dump(), owner_id=current.id, created_at=datetime.utcnow(), updated_at=datetime.utcnow())
-    await db.registries.insert_one(reg.model_dump())
-    await log_audit(reg.id, current.id, "registry.create", {"slug": reg.slug})
-    return reg
+@api_router.get("/status", response_model=List[StatusCheck])
+async def get_status_checks():
+    status_checks = await db.status_checks.find().to_list(1000)
+    return [StatusCheck(**status_check) for status_check in status_checks]
 
-@api_router.get("/registries/mine", response_model=List[Registry])
-async def list_my_registries(current: UserPublic = Depends(get_user_from_token)):
-    cursor = db.registries.find({"$or": [{"owner_id": current.id}, {"collaborators": {"$in": [current.id]}}]}).sort("updated_at", -1)
-    items = await cursor.to_list(100)
-    for it in items:
-        it.pop("_id", None)
-    return [Registry(**it) for it in items]
-
-@api_router.get("/registries/{registry_id}", response_model=Registry)
-async def get_registry(registry_id: str, current: UserPublic = Depends(get_user_from_token)):
-    reg = await db.registries.find_one({"id": registry_id})
-    if not reg:
-        raise HTTPException(status_code=404, detail="Registry not found")
-    if not (is_owner_or_collab(reg, current.id) or await is_admin_user(current)):
-        raise HTTPException(status_code=403, detail="Not allowed")
-    reg.pop("_id", None)
-    return Registry(**reg)
-
-@api_router.put("/registries/{registry_id}", response_model=Registry)
-async def update_registry(registry_id: str, patch: RegistryUpdate, current: UserPublic = Depends(get_user_from_token)):
-    reg = await db.registries.find_one({"id": registry_id})
-    if not reg:
-        raise HTTPException(status_code=404, detail="Registry not found")
-    admin = await is_admin_user(current)
-    if reg.get('locked') and not admin:
-        raise HTTPException(status_code=423, detail="Registry is locked by admin")
-    if not (is_owner_or_collab(reg, current.id) or admin):
-        raise HTTPException(status_code=403, detail="Not allowed")
-    update_doc = {k: v for k, v in patch.model_dump().items() if v is not None}
-    if update_doc:
-        update_doc["updated_at"] = datetime.utcnow()
-        await db.registries.update_one({"id": registry_id}, {"$set": update_doc})
-        await log_audit(registry_id, current.id, "registry.update", {"fields": list(update_doc.keys())})
-        reg.update(update_doc)
-    reg.pop("_id", None)
-    return Registry(**reg)
-
-@api_router.get("/registries/{slug}/public", response_model=PublicRegistryResponse)
-async def get_registry_public(slug: str):
-    reg_doc = await db.registries.find_one({"slug": slug})
-    if not reg_doc:
-        raise HTTPException(status_code=404, detail="Registry not found")
-    funds = await db.funds.find({"registry_id": reg_doc["id"], "visible": True}).sort("order", 1).to_list(1000)
-    response_funds: List[Dict[str, Any]] = []
-    total_raised = 0.0
-    for f in funds:
-        if "_id" in f:
-            del f["_id"]
-        agg = await db.contributions.aggregate([
-            {"$match": {"fund_id": f["id"]}},
-            {"$group": {"_id": None, "sum": {"$sum": "$amount"}}},
-        ]).to_list(1)
-        raised = float(agg[0]["sum"]) if agg else 0.0
-        total_raised += raised
-        progress = min(100, round((raised / float(f.get("goal") or 1)) * 100)) if f.get("goal") else 0
-        response_funds.append({**f, "raised": raised, "progress": progress})
-    if "_id" in reg_doc:
-        del reg_doc["_id"]
-    return PublicRegistryResponse(
-        registry=Registry(**reg_doc),
-        funds=response_funds,
-        totals={"raised": total_raised},
-    )
-
-# Funds
-@api_router.post("/registries/{registry_id}/funds/bulk_upsert")
-async def bulk_upsert_funds(registry_id: str, body: Dict[str, List[FundIn]], current: UserPublic = Depends(get_user_from_token)):
-    reg = await db.registries.find_one({"id": registry_id})
-    if not reg:
-        raise HTTPException(status_code=404, detail="Registry not found")
-    admin = await is_admin_user(current)
-    if reg.get('locked') and not admin:
-        raise HTTPException(status_code=423, detail="Registry is locked by admin")
-    if not (is_owner_or_collab(reg, current.id) or admin):
-        raise HTTPException(status_code=403, detail="Not allowed")
-    funds_in = body.get("funds", [])
-    created = 0
-    updated = 0
-    for idx, f in enumerate(funds_in):
-        data = f.model_dump()
-        now = datetime.utcnow()
-        if data.get("order") is None:
-            data["order"] = idx
-        if not data.get("id"):
-            data["id"] = str(uuid.uuid4())
-        existing = await db.funds.find_one({"id": data["id"]})
-        if existing:
-            data["updated_at"] = now
-            await db.funds.update_one({"id": data["id"]}, {"$set": data})
-            updated += 1
-        else:
-            doc = Fund(**{**data, "registry_id": registry_id, "created_at": now, "updated_at": now})
-            await db.funds.insert_one(doc.model_dump())
-            created += 1
-    await log_audit(registry_id, current.id, "funds.bulk_upsert", {"created": created, "updated": updated, "count": len(funds_in)})
-    return {"created": created, "updated": updated}
-
-@api_router.get("/registries/{registry_id}/funds", response_model=List[Fund])
-async def list_funds(registry_id: str, current: UserPublic = Depends(get_user_from_token)):
-    reg = await db.registries.find_one({"id": registry_id})
-    if not reg:
-        raise HTTPException(status_code=404, detail="Registry not found")
-    if not (is_owner_or_collab(reg, current.id) or await is_admin_user(current)):
-        raise HTTPException(status_code=403, detail="Not allowed")
-    items = await db.funds.find({"registry_id": registry_id}).sort("order", 1).to_list(1000)
-    return [Fund(**{k: v for k, v in it.items() if k != "_id"}) for it in items]
-
-# Contributions
-@api_router.post("/contributions", response_model=Contribution, status_code=201)
-async def create_contribution(payload: ContributionIn):
-    fund = await db.funds.find_one({"id": payload.fund_id})
-    if not fund:
-        raise HTTPException(status_code=404, detail="Fund not found")
-    contrib = Contribution(**payload.model_dump())
-    await db.contributions.insert_one(contrib.model_dump())
-    return contrib
-
-@api_router.get("/registries/{registry_id}/contributions", response_model=List[Contribution])
-async def list_registry_contributions(registry_id: str, current: UserPublic = Depends(get_user_from_token)):
-    reg = await db.registries.find_one({"id": registry_id})
-    if not reg:
-        raise HTTPException(status_code=404, detail="Registry not found")
-    if not (is_owner_or_collab(reg, current.id) or await is_admin_user(current)):
-        raise HTTPException(status_code=403, detail="Not allowed")
-    fund_ids = [f["id"] for f in await db.funds.find({"registry_id": registry_id}).to_list(1000)]
-    items = await db.contributions.find({"fund_id": {"$in": fund_ids}}).sort("created_at", -1).to_list(5000)
-    return [Contribution(**it) for it in items]
-
-@api_router.get("/registries/{registry_id}/contributions/export/csv")
-async def export_registry_contributions_csv(registry_id: str, current: UserPublic = Depends(get_user_from_token)):
-    reg = await db.registries.find_one({"id": registry_id})
-    if not reg:
-        raise HTTPException(status_code=404, detail="Registry not found")
-    if not (is_owner_or_collab(reg, current.id) or await is_admin_user(current)):
-        raise HTTPException(status_code=403, detail="Not allowed")
-    fund_map: Dict[str, str] = {}
-    for f in await db.funds.find({"registry_id": registry_id}).to_list(1000):
-        fund_map[f['id']] = f.get('title', '')
-    items = await db.contributions.find({"fund_id": {"$in": list(fund_map.keys())}}).sort("created_at", -1).to_list(10000)
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(["created_at", "fund_title", "amount", "name", "message", "method", "public"])
-    for it in items:
-        created_at = it.get('created_at')
-        if isinstance(created_at, datetime):
-            created_at = created_at.replace(tzinfo=timezone.utc).isoformat()
-        writer.writerow([
-            created_at,
-            fund_map.get(it.get('fund_id'), ''),
-            it.get('amount'),
-            it.get('name', ''),
-            it.get('message', ''),
-            it.get('method', ''),
-            it.get('public', True)
-        ])
-    output.seek(0)
-    headers = {"Content-Disposition": f"attachment; filename=contributions_{registry_id}.csv"}
-    return StreamingResponse(iter([output.getvalue()]), media_type="text/csv", headers=headers)
-
-@api_router.get("/registries/{registry_id}/analytics")
-async def registry_analytics(registry_id: str, current: UserPublic = Depends(get_user_from_token)):
-    reg = await db.registries.find_one({"id": registry_id})
-    if not reg:
-        raise HTTPException(status_code=404, detail="Registry not found")
-    if not (is_owner_or_collab(reg, current.id) or await is_admin_user(current)):
-        raise HTTPException(status_code=403, detail="Not allowed")
-    funds = await db.funds.find({"registry_id": registry_id}).to_list(1000)
-    fund_ids = [f['id'] for f in funds]
-    fund_titles = {f['id']: f.get('title', '') for f in funds}
-    pipeline = [
-        {"$match": {"fund_id": {"$in": fund_ids}}},
-        {"$group": {"_id": None, "total": {"$sum": "$amount"}, "count": {"$sum": 1}}},
-    ]
-    summary = await db.contributions.aggregate(pipeline).to_list(1)
-    total = float(summary[0]['total']) if summary else 0.0
-    count = int(summary[0]['count']) if summary else 0
-    avg = (total / count) if count else 0.0
-    since = datetime.utcnow() - timedelta(days=30)
-    daily_pipeline = [
-        {"$match": {"fund_id": {"$in": fund_ids}, "created_at": {"$gte": since}}},
-        {"$group": {"_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_at"}}, "sum": {"$sum": "$amount"}}},
-        {"$sort": {"_id": 1}}
-    ]
-    daily_raw = await db.contributions.aggregate(daily_pipeline).to_list(1000)
-    daily = [{"date": x['_id'], "sum": float(x['sum'])} for x in daily_raw]
-    by_method_pipeline = [
-        {"$match": {"fund_id": {"$in": fund_ids}}},
-        {"$group": {"_id": "$method", "sum": {"$sum": "$amount"}, "count": {"$sum": 1}}},
-        {"$sort": {"sum": -1}}
-    ]
-    by_method_raw = await db.contributions.aggregate(by_method_pipeline).to_list(50)
-    by_method = [
-        {"method": x.get('_id') or 'unknown', "sum": float(x['sum']), "count": int(x['count'])}
-        for x in by_method_raw
-    ]
-    recent = await db.contributions.find({"fund_id": {"$in": fund_ids}}).sort("created_at", -1).to_list(5)
-    recent = [
-        {"name": r.get('name', 'Guest'), "amount": float(r.get('amount', 0)), "message": r.get('message'), "created_at": r.get('created_at')} for r in recent
-    ]
-    return {"total": total, "count": count, "average": avg, "daily": daily, "by_method": by_method, "recent": recent}
-
-# Collaborators
-class CollaboratorAdd(BaseModel):
-    email: EmailStr
-
-@api_router.post("/registries/{registry_id}/collaborators")
-async def add_collaborator(registry_id: str, body: CollaboratorAdd, current: UserPublic = Depends(get_user_from_token)):
-    reg = await db.registries.find_one({"id": registry_id})
-    if not reg:
-        raise HTTPException(status_code=404, detail="Registry not found")
-    admin = await is_admin_user(current)
-    if reg.get('locked') and not admin:
-        raise HTTPException(status_code=423, detail="Registry is locked by admin")
-    if reg.get("owner_id") != current.id and not admin:
-        raise HTTPException(status_code=403, detail="Only owner can add collaborators")
-    user = await find_user_by_email(body.email.lower())
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    if user['id'] == reg['owner_id']:
-        raise HTTPException(status_code=400, detail="Owner already has access")
-    collabs = set(reg.get('collaborators') or [])
-    collabs.add(user['id'])
-    await db.registries.update_one({"id": registry_id}, {"$set": {"collaborators": list(collabs), "updated_at": datetime.utcnow()}})
-    await log_audit(registry_id, current.id, "collaborator.add", {"email": body.email.lower(), "user_id": user['id']})
-    return {"ok": True}
-
-@api_router.delete("/registries/{registry_id}/collaborators/{user_id}")
-async def remove_collaborator(registry_id: str, user_id: str, current: UserPublic = Depends(get_user_from_token)):
-    reg = await db.registries.find_one({"id": registry_id})
-    if not reg:
-        raise HTTPException(status_code=404, detail="Registry not found")
-    admin = await is_admin_user(current)
-    if reg.get('locked') and not admin:
-        raise HTTPException(status_code=423, detail="Registry is locked by admin")
-    if reg.get("owner_id") != current.id and not admin:
-        raise HTTPException(status_code=403, detail="Only owner can remove collaborators")
-    collabs = set(reg.get('collaborators') or [])
-    if user_id in collabs:
-        collabs.remove(user_id)
-        await db.registries.update_one({"id": registry_id}, {"$set": {"collaborators": list(collabs), "updated_at": datetime.utcnow()}})
-        await log_audit(registry_id, current.id, "collaborator.remove", {"user_id": user_id})
-    return {"ok": True}
-
-# Audit logs (owner/collab/admin)
-@api_router.get("/registries/{registry_id}/audit", response_model=List[AuditLog])
-async def get_audit_logs(registry_id: str, current: UserPublic = Depends(get_user_from_token)):
-    reg = await db.registries.find_one({"id": registry_id})
-    if not reg:
-        raise HTTPException(status_code=404, detail="Registry not found")
-    if not (is_owner_or_collab(reg, current.id) or await is_admin_user(current)):
-        raise HTTPException(status_code=403, detail="Not allowed")
-    items = await db.audit_logs.find({"registry_id": registry_id}).sort("created_at", -1).to_list(200)
-    return [AuditLog(**{k: v for k, v in it.items() if k != "_id"}) for it in items]
-
-# Uploads
-class UploadInitBody(BaseModel):
-    filename: str
-    size: int
-    mime: Optional[str] = None
-    registry_id: str
-
-class UploadInitResponse(BaseModel):
-    upload_id: str
-    chunk_size: int
-
-@api_router.post("/uploads/initiate", response_model=UploadInitResponse)
-async def initiate_upload(body: UploadInitBody, current: UserPublic = Depends(get_user_from_token)):
-    reg = await db.registries.find_one({"id": body.registry_id})
-    if not reg or not (is_owner_or_collab(reg, current.id) or await is_admin_user(current)):
-        raise HTTPException(status_code=403, detail="Not allowed")
-    if body.size > MAX_UPLOAD_SIZE:
-        raise HTTPException(status_code=413, detail="File too large")
-    if body.mime and not body.mime.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Only image uploads are allowed")
-    upload_id = str(uuid.uuid4())
-    tmp_dir = UPLOAD_TMP / upload_id
-    tmp_dir.mkdir(parents=True, exist_ok=True)
-    meta = {
-        "upload_id": upload_id,
-        "filename": body.filename,
-        "size": body.size,
-        "mime": body.mime,
-        "registry_id": body.registry_id,
-        "created_at": datetime.utcnow(),
-        "completed": False,
-    }
-    await db.uploads.insert_one(meta)
-    return UploadInitResponse(upload_id=upload_id, chunk_size=CHUNK_SIZE)
-
-@api_router.post("/uploads/chunk")
-async def upload_chunk(upload_id: str = Form(...), index: int = Form(...), chunk: UploadFile = File(...), current: UserPublic = Depends(get_user_from_token)):
-    meta = await db.uploads.find_one({"upload_id": upload_id})
-    if not meta:
-        raise HTTPException(status_code=404, detail="Upload not found")
-    reg = await db.registries.find_one({"id": meta.get('registry_id')})
-    if not reg or not (is_owner_or_collab(reg, current.id) or await is_admin_user(current)):
-        raise HTTPException(status_code=403, detail="Not allowed")
-    data = await chunk.read()
-    if len(data) > CHUNK_SIZE + 1024:
-        raise HTTPException(status_code=400, detail="Chunk too large")
-    tmp_dir = UPLOAD_TMP / upload_id
-    tmp_dir.mkdir(parents=True, exist_ok=True)
-    part_path = tmp_dir / f"{index}.part"
-    with open(part_path, "wb") as f:
-        f.write(data)
-    return {"ok": True}
-
-class UploadCompleteBody(BaseModel):
-    upload_id: str
-
-class UploadCompleteResponse(BaseModel):
-    url: str
-
-@api_router.post("/uploads/complete", response_model=UploadCompleteResponse)
-async def complete_upload(body: UploadCompleteBody, current: UserPublic = Depends(get_user_from_token)):
-    meta = await db.uploads.find_one({"upload_id": body.upload_id})
-    if not meta:
-        raise HTTPException(status_code=404, detail="Upload not found")
-    reg = await db.registries.find_one({"id": meta.get('registry_id')})
-    if not reg or not (is_owner_or_collab(reg, current.id) or await is_admin_user(current)):
-        raise HTTPException(status_code=403, detail="Not allowed")
-    tmp_dir = UPLOAD_TMP / body.upload_id
-    parts = sorted([p for p in tmp_dir.glob("*.part")], key=lambda p: int(p.stem))
-    if not parts:
-        raise HTTPException(status_code=400, detail="No parts uploaded")
-    safe_name = f"{uuid.uuid4()}_{meta['filename'].replace('/', '_')}"
-    final_dir = UPLOAD_DIR / "registry" / meta['registry_id']
-    final_dir.mkdir(parents=True, exist_ok=True)
-    final_path = final_dir / safe_name
-    with open(final_path, "wb") as out:
-        for part in parts:
-            with open(part, "rb") as pf:
-                out.write(pf.read())
-    for part in parts:
-        try:
-            part.unlink()
-        except Exception:
-            pass
-    try:
-        tmp_dir.rmdir()
-    except Exception:
-        pass
-    await db.uploads.update_one({"upload_id": body.upload_id}, {"$set": {"completed": True, "final_path": str(final_path)}})
-    url_path = f"/api/files/registry/{meta['registry_id']}/{safe_name}"
-    return UploadCompleteResponse(url=url_path)
-
+# ... rest of routes unchanged ...
 
 # Include the router in the main app
 app.include_router(api_router)

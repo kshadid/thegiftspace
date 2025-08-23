@@ -121,5 +121,9 @@ export async function adminSetRegistryLock(registryId, { locked, reason }) {
   const { data } = await api.post(`/admin/registries/${registryId}/lock`, { locked, reason });
   return data;
 }
+export async function adminUserDetail(userId) {
+  const { data } = await api.get(`/admin/users/${userId}/detail`);
+  return data;
+}
 
 export default api;

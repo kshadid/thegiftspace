@@ -9,6 +9,7 @@ import AuthPage from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import AdminPage from "./pages/Admin";
 import AdminRegistryDetail from "./pages/AdminRegistryDetail";
+import AdminUserDetail from "./pages/AdminUserDetail";
 import TermsPage from "./pages/Terms";
 import PrivacyPage from "./pages/Privacy";
 import Footer from "./components/layout/Footer";
@@ -46,6 +47,7 @@ function App() {
               <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
               <Route path="/admin" element={<Protected><AdminPage /></Protected>} />
               <Route path="/admin/r/:id" element={<Protected><AdminRegistryDetail /></Protected>} />
+              <Route path="/admin/u/:id" element={<Protected><AdminUserDetail /></Protected>} />
               <Route path="/create" element={<Protected><CreateRegistry /></Protected>} />
               <Route path="/r/:slug" element={<PublicRegistry />} />
               <Route path="/legal/terms" element={<TermsPage />} />
