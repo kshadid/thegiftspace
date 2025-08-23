@@ -101,3 +101,65 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+## user_problem_statement: Build a launchable MVP for a Hitchd-style honeymoon cash registry with Dubai default locale, turn current frontend mock into full-stack with FastAPI+MongoDB.
+## backend:
+##   - task: "Design API contracts and implement core endpoints"
+##     implemented: true
+##     working: true
+##     file: "/app/backend/server.py"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: true
+##     status_history:
+##         -working: true
+##         -agent: "main"
+##         -comment: "Added Registry, Fund, Contribution models and REST routes with /api prefix. Aggregations compute raised/progress."
+##   - task: "Mongo connection and collections"
+##     implemented: true
+##     working: true
+##     file: "/app/backend/server.py"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: true
+##     status_history:
+##         -working: true
+##         -agent: "main"
+##         -comment: "Using MONGO_URL and DB_NAME from env; returns Hello World on /api/."
+## frontend:
+##   - task: "Landing + Create + Public with mock data"
+##     implemented: true
+##     working: true
+##     file: "/app/frontend/src/pages/*.jsx"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: false
+##     status_history:
+##         -working: true
+##         -agent: "main"
+##         -comment: "Interactive mock done; contributions write to localStorage."
+##   - task: "Wire to backend with graceful fallback"
+##     implemented: true
+##     working: true
+##     file: "/app/frontend/src/pages/CreateRegistry.jsx, /app/frontend/src/pages/PublicRegistry.jsx, /app/frontend/src/lib/api.js"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: true
+##     status_history:
+##         -working: true
+##         -agent: "main"
+##         -comment: "Create/Update registry, bulk upsert funds, public fetch, and contributions call backend with fallback to mock."
+## metadata:
+##   created_by: "main_agent"
+##   version: "1.0"
+##   test_sequence: 1
+##   run_ui: false
+## test_plan:
+##   current_focus:
+##     - "Test backend endpoints (create registry, bulk_upsert, public, contribution)"
+##     - "Verify frontend sync to backend and fallback works"
+##   stuck_tasks: []
+##   test_all: false
+##   test_priority: "high_first"
+## agent_communication:
+##     -agent: "main"
+##     -message: "Please run backend tests first using the contracts; ensure /api prefix and Mongo are used. Then we will decide on UI automation."
