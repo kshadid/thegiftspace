@@ -1,28 +1,16 @@
-# API Contracts – Cash Registry (Uploads & Analytics Expanded)
+# API Contracts – Cash Registry (Pinned funds + validations)
 
-New Uploads (auth: owner or collaborator)
-- POST /api/uploads/initiate
-  - body: { filename, size, mime?, registry_id }
-  - 200 -> { upload_id, chunk_size }
-- POST /api/uploads/chunk (multipart)
-  - form: upload_id, index, chunk (binary)
-  - 200 -> { ok: true }
-- POST /api/uploads/complete
-  - body: { upload_id }
-  - 200 -> { url: "/api/files/registry/{registry_id}/{filename}" }
-- Static served at /api/files/** (mounted)
+Changes
+- Fund: add pinned:boolean (default false). Public resolves pinned field.
+- Bulk upsert accepts pinned, order persisted.
+- Uploads: validate max 20MB; image/* only; CHUNK_SIZE=1MB; static served at /api/files/**.
 
-Analytics Extended
-- GET /api/registries/{registry_id}/analytics ->
-  - { total, count, average, by_fund:[{fund_id,title,sum,count}], daily:[{date,sum}], by_method:[{method,sum,count}], recent:[{name,amount,message?,created_at}] }
+Public
+- GET /api/registries/{slug}/public -> funds sorted by order; includes pinned.
 
-Collaborators
-- POST /api/registries/{registry_id}/collaborators { email }
-- DELETE /api/registries/{registry_id}/collaborators/{user_id }
-
-Frontend integration
-- src/lib/uploads.js uploadFileChunked(file, registryId, onProgress) -> { url }
-- CreateRegistry: hero upload + fund image upload with inline progress; hero presets; drag reorder; analytics; collaborators; theme presets.
+Frontend
+- CreateRegistry: selection bulk actions (show/hide/delete), duplicate fund, pinned toggle, drag reorder, empty states.
+- PublicRegistry: pinned fund highlighted as hero card; others in grid; smooth scroll via #gifts; og:image set from hero_image.
 
 Notes
 - Payments still mocked; emails deferred.

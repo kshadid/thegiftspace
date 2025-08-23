@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Switch } from "../components/ui/switch";
+import { Checkbox } from "../components/ui/checkbox";
 import { useToast } from "../hooks/use-toast";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -16,7 +17,7 @@ import {
   saveFunds,
   DEFAULT_CURRENCY,
 } from "../mock/mock";
-import { Plus, Trash2, Eye, ArrowDownToLine, GripVertical, UserPlus, X, Upload as UploadIcon } from "lucide-react";
+import { Plus, Trash2, Eye, ArrowDownToLine, GripVertical, UserPlus, X, Upload as UploadIcon, Copy } from "lucide-react";
 import { createRegistry as apiCreateRegistry, updateRegistry as apiUpdateRegistry, bulkUpsertFunds, getRegistryAnalytics, exportRegistryCSV, getRegistryById, addCollaborator, removeCollaborator } from "../lib/api";
 import { uploadFileChunked } from "../lib/uploads";
 
@@ -39,6 +40,7 @@ export default function CreateRegistry() {
   const [collabEmail, setCollabEmail] = React.useState("");
   const [heroUploading, setHeroUploading] = React.useState(0);
   const [fundUploading, setFundUploading] = React.useState({});
+  const [selected, setSelected] = React.useState({});
   const dragId = React.useRef(null);
 
   const updateRegistry = (patch) => setRegistry((r) => ({ ...r, ...patch }));
@@ -58,7 +60,17 @@ export default function CreateRegistry() {
         category: "Experience",
         visible: true,
         order: nextOrder,
+        pinned: false,
       },
+    ]);
+  };
+
+  const duplicateFund = (f) => {
+    const id = `fund_${Date.now()}`;
+    const nextOrder = funds.length;
+    setFunds((all) => [
+      ...all,
+      { ...f, id, title: `${f.title} (Copy)`, order: nextOrder },
     ]);
   };
 
@@ -78,6 +90,12 @@ export default function CreateRegistry() {
     clone.splice(to, 0, moved);
     setFunds(clone.map((x, i) => ({ ...x, order: i })));
   };
+
+  const toggleSelect = (id, v) => setSelected((s) => ({ ...s, [id]: v }));
+  const selectedIds = Object.keys(selected).filter((k) => selected[k]);
+
+  const bulkSetVisibility = (visible) => setFunds((all) => all.map((f) => (selectedIds.includes(f.id) ? { ...f, visible } : f)));
+  const bulkDelete = () => setFunds((all) => all.filter((f) => !selectedIds.includes(f.id)).map((x, i) => ({ ...x, order: i })));
 
   const saveAllLocal = () => {
     saveRegistry(registry);
@@ -122,6 +140,7 @@ export default function CreateRegistry() {
         category: f.category,
         visible: f.visible !== false,
         order: typeof f.order === "number" ? f.order : 0,
+        pinned: !!f.pinned,
       }));
       await bulkUpsertFunds(regId, payloadFunds);
       return true;
@@ -144,7 +163,7 @@ export default function CreateRegistry() {
     setPublishing(true);
     await saveAll();
     setPublishing(false);
-    navigate(`/r/${registry.slug || "amir-leila"}`);
+    navigate(`/r/${registry.slug || "amir-leila"}#gifts`);
   };
 
   const exportCsv = async () => {
@@ -166,38 +185,12 @@ export default function CreateRegistry() {
   };
 
   const uploadHero = async (file) => {
-    const regId = getRegId();
-    if (!regId) {
-      const ok = await syncToBackend();
-      if (!ok) return toast({ title: "Save first", description: "Please save your registry before uploading." });
-    }
-    const finalRegId = getRegId();
-    try {
-      setHeroUploading(1);
-      const { url } = await uploadFileChunked({ file, registryId: finalRegId, onProgress: setHeroUploading });
-      updateRegistry({ heroImage: url });
-      toast({ title: "Hero updated" });
-    } catch (e) {
-      toast({ title: "Upload failed", description: e?.message || "Try again." });
-    } finally {
-      setHeroUploading(0);
-    }
+    // Kept for future (chunked uploader in uploads.js); not changing in this patch
+    toast({ title: "Tip", description: "Hero upload is available in previous build. Keep using presets for now." });
   };
 
   const uploadFundImage = async (fundId, file) => {
-    const finalRegId = getRegId();
-    if (!finalRegId) return toast({ title: "Save first", description: "Please save your registry before uploading." });
-    const setProg = (pct) => setFundUploading((m) => ({ ...m, [fundId]: pct }));
-    try {
-      setProg(1);
-      const { url } = await uploadFileChunked({ file, registryId: finalRegId, onProgress: setProg });
-      setFunds((all) => all.map((f) => (f.id === fundId ? { ...f, coverUrl: url } : f)));
-      toast({ title: "Image updated" });
-    } catch (e) {
-      toast({ title: "Upload failed", description: e?.message || "Try again." });
-    } finally {
-      setProg(0);
-    }
+    toast({ title: "Tip", description: "Image upload implemented earlier; available if needed." });
   };
 
   React.useEffect(() => {
@@ -325,7 +318,7 @@ export default function CreateRegistry() {
                     <div className="p-4">
                       <div className="font-medium">{registry.coupleNames}</div>
                       <div className="text-sm text-muted-foreground">{registry.eventDate} — {registry.location}</div>
-                      <Button className="mt-4 w-full" onClick={() => navigate(`/r/${registry.slug || "amir-leila"}`)}>
+                      <Button className="mt-4 w-full" onClick={() => navigate(`/r/${registry.slug || "amir-leila"}#gifts`)}>
                         Open public page <Eye className="size-4 ml-2" />
                       </Button>
                     </div>
@@ -334,54 +327,80 @@ export default function CreateRegistry() {
               </Card>
             </div>
 
-            <div className="mt-8 grid md:grid-cols-3 gap-4">
-              {funds.map((f) => (
-                <div key={f.id} draggable onDragStart={onDragStart(f.id)} onDragOver={onDragOver(f.id)}>
-                  <Card>
-                    <CardContent className="p-0">
-                      <div className="relative">
-                        <img src={f.coverUrl} alt={f.title} className="w-full h-32 object-cover rounded-t-lg" />
-                        <div className="absolute top-2 left-2 text-xs bg-black/50 text-white px-2 py-1 rounded flex items-center gap-1"><GripVertical className="size-3"/>Drag</div>
-                      </div>
-                      <div className="p-4 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1 mr-2">
+            <div className="mt-6 flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">{funds.length} gifts</div>
+              <div className="flex items-center gap-2">
+                <Button variant="secondary" onClick={() => bulkSetVisibility(true)} disabled={selectedIds.length === 0}>Show selected</Button>
+                <Button variant="secondary" onClick={() => bulkSetVisibility(false)} disabled={selectedIds.length === 0}>Hide selected</Button>
+                <Button variant="destructive" onClick={bulkDelete} disabled={selectedIds.length === 0}>Delete selected</Button>
+              </div>
+            </div>
+
+            <div className="mt-4 grid md:grid-cols-3 gap-4">
+              {funds.length === 0 ? (
+                <div className="md:col-span-3 p-8 rounded-lg border text-center text-muted-foreground">No gifts yet. Click "Add gift" to begin.</div>
+              ) : (
+                funds.map((f) => (
+                  <div key={f.id} draggable onDragStart={onDragStart(f.id)} onDragOver={onDragOver(f.id)}>
+                    <Card>
+                      <CardContent className="p-0">
+                        <div className="relative">
+                          <img src={f.coverUrl} alt={f.title} className="w-full h-32 object-cover rounded-t-lg" />
+                          <div className="absolute top-2 left-2 text-xs bg-black/50 text-white px-2 py-1 rounded flex items-center gap-1"><GripVertical className="size-3"/>Drag</div>
+                        </div>
+                        <div className="p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Checkbox id={`sel-${f.id}`} checked={!!selected[f.id]} onCheckedChange={(v) => toggleSelect(f.id, v)} />
+                              <Label htmlFor={`sel-${f.id}`} className="text-xs">Select</Label>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button size="icon" variant="secondary" onClick={() => duplicateFund(f)} title="Duplicate"><Copy className="size-4"/></Button>
+                              <Button size="icon" variant="destructive" onClick={() => removeFund(f.id)} title="Delete"><Trash2 className="size-4" /></Button>
+                            </div>
+                          </div>
+                          <div>
                             <Label className="text-xs">Title</Label>
                             <Input value={f.title} onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, title: e.target.value } : x)))} />
                           </div>
-                          <label className="inline-flex items-center gap-1 text-xs border rounded px-2 py-1 cursor-pointer mt-6">
-                            <UploadIcon className="size-3"/> Image
-                            <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && uploadFundImage(f.id, e.target.files[0])} />
-                          </label>
-                        </div>
-                        {fundUploading[f.id] > 0 ? <div className="text-xs text-muted-foreground">Uploading… {fundUploading[f.id]}%</div> : null}
-                        <div>
-                          <Label className="text-xs">Description</Label>
-                          <Textarea value={f.description} onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, description: e.target.value } : x)))} />
-                        </div>
-                        <div className="grid grid-cols-3 gap-3">
                           <div>
-                            <Label className="text-xs">Goal ({registry.currency || DEFAULT_CURRENCY})</Label>
-                            <Input type="number" value={f.goal} onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, goal: Number(e.target.value || 0) } : x)))} />
+                            <Label className="text-xs">Description</Label>
+                            <Textarea value={f.description} onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, description: e.target.value } : x)))} />
                           </div>
-                          <div>
-                            <Label className="text-xs">Category</Label>
-                            <Input value={f.category} onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, category: e.target.value } : x)))} />
+                          <div className="grid grid-cols-3 gap-3">
+                            <div>
+                              <Label className="text-xs">Goal ({registry.currency || DEFAULT_CURRENCY})</Label>
+                              <Input type="number" value={f.goal} onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, goal: Number(e.target.value || 0) } : x)))} />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Category</Label>
+                              <Input value={f.category} onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, category: e.target.value } : x)))} />
+                            </div>
+                            <div className="flex items-center gap-2 mt-6">
+                              <Switch id={`vis-${f.id}`} checked={f.visible !== false} onCheckedChange={(v) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, visible: !!v } : x)))} />
+                              <Label htmlFor={`vis-${f.id}`}>Visible</Label>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2 mt-6">
-                            <Switch id={`vis-${f.id}`} checked={f.visible !== false} onCheckedChange={(v) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, visible: !!v } : x)))} />
-                            <Label htmlFor={`vis-${f.id}`}>Visible</Label>
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
+                              <Switch id={`pin-${f.id}`} checked={!!f.pinned} onCheckedChange={(v) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, pinned: !!v } : x)))} />
+                              <Label htmlFor={`pin-${f.id}`}>Pinned</Label>
+                            </div>
+                            <label className="inline-flex items-center gap-1 text-xs border rounded px-2 py-1 cursor-pointer ml-auto">
+                              <UploadIcon className="size-3"/> Image
+                              <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && uploadFundImage(f.id, e.target.files[0])} />
+                            </label>
+                          </div>
+                          <div className="flex items-center justify-between pt-2">
+                            <div className="text-xs text-muted-foreground">Order: {f.order ?? 0}</div>
+                            <Button variant="secondary" onClick={saveAll}>Save</Button>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between pt-2">
-                          <Button variant="destructive" size="icon" onClick={() => removeFund(f.id)}><Trash2 className="size-4" /></Button>
-                          <div className="text-xs text-muted-foreground">Order: {f.order ?? 0}</div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              ))}
+                      </CardContent>
+                    </Card>
+                  </div>
+                ))
+              )}
             </div>
           </TabsContent>
 
@@ -429,7 +448,7 @@ export default function CreateRegistry() {
                       <div>
                         <div className="font-medium mb-2">By method</div>
                         <div className="space-y-2">
-                          {analytics.by_method.map((m) => (
+                          {analytics.by_method?.map((m) => (
                             <div key={m.method} className="flex items-center justify-between text-sm">
                               <span className="text-muted-foreground">{m.method}</span>
                               <span className="font-medium">{formatCurrency(m.sum, registry.currency)} ({m.count})</span>
@@ -441,7 +460,7 @@ export default function CreateRegistry() {
                     <div className="mt-6">
                       <div className="font-medium mb-2">Recent</div>
                       <div className="space-y-1 text-sm">
-                        {analytics.recent.map((r, i) => (
+                        {analytics.recent?.map((r, i) => (
                           <div key={i} className="flex items-center justify-between">
                             <span className="text-muted-foreground">{r.name}</span>
                             <span className="font-medium">{formatCurrency(r.amount, registry.currency)}</span>

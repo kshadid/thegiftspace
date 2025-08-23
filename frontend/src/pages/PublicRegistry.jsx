@@ -48,6 +48,7 @@ export default function PublicRegistry() {
             category: f.category,
             raised: f.raised,
             progress: f.progress,
+            pinned: !!f.pinned,
           }))
         );
         document.title = `${data.registry.couple_names} · Wedding Registry`;
@@ -55,6 +56,7 @@ export default function PublicRegistry() {
         setMetaTag("description", desc);
         setMetaTag("og:title", document.title);
         setMetaTag("og:description", desc);
+        setMetaTag("og:image", data.registry.hero_image || "");
       } catch (e) {
         console.log("Public page using local mock due to backend error", e?.message);
       }
@@ -66,6 +68,9 @@ export default function PublicRegistry() {
   const receivedAll = funds.every((f) => typeof f.raised === "number")
     ? funds.reduce((acc, f) => acc + (f.raised || 0), 0)
     : totalLocal();
+
+  const pinned = funds.find((f) => f.pinned || (f.category || "").toLowerCase().includes("general"));
+  const others = pinned ? funds.filter((f) => f.id !== pinned.id) : funds;
 
   return (
     <div className="min-h-screen">
@@ -86,11 +91,21 @@ export default function PublicRegistry() {
         </div>
       </div>
 
+      <a id="gifts" />
+
       <div className="max-w-6xl mx-auto px-4 py-10">
-        <div className="grid md:grid-cols-3 gap-6">
-          {funds.map((f) => (
-            <FundCard key={f.id} fund={f} currency={registry.currency} />
-          ))}
+        {pinned ? (
+          <PinnedFund fund={pinned} currency={registry.currency} />
+        ) : null}
+
+        <div className="grid md:grid-cols-3 gap-6 mt-6">
+          {others.length === 0 ? (
+            <div className="md:col-span-3 p-8 rounded-lg border text-center text-muted-foreground">No gifts yet.</div>
+          ) : (
+            others.map((f) => (
+              <FundCard key={f.id} fund={f} currency={registry.currency} />
+            ))
+          )}
         </div>
 
         <div className="mt-12 p-6 rounded-lg border bg-muted/30">
@@ -107,6 +122,34 @@ export default function PublicRegistry() {
         </div>
       </div>
     </div>
+  );
+}
+
+function PinnedFund({ fund, currency }) {
+  const { toast } = useToast();
+  const received = typeof fund.raised === "number" ? fund.raised : sumLocal(fund.id);
+  const progress = typeof fund.progress === "number" ? fund.progress : Math.min(100, Math.round((received / (fund.goal || 1)) * 100));
+  return (
+    <Card className="overflow-hidden">
+      <CardContent className="p-0">
+        <img src={fund.coverUrl} alt={fund.title} className="w-full h-64 object-cover" />
+        <div className="p-6 space-y-3">
+          <div className="text-xs text-muted-foreground">Highlighted</div>
+          <div className="text-2xl font-semibold">{fund.title}</div>
+          <p className="text-sm text-muted-foreground max-w-2xl">{fund.description}</p>
+          <div className="mt-2 max-w-2xl">
+            <Progress value={progress} />
+            <div className="mt-1 text-xs text-muted-foreground flex items-center justify-between">
+              <span>{formatCurrency(received, currency)} raised</span>
+              <span>Goal {formatCurrency(fund.goal, currency)}</span>
+            </div>
+          </div>
+          <div className="pt-2 max-w-sm">
+            <ContributionDialog fund={fund} currency={currency} onComplete={() => { toast({ title: "Contribution recorded", description: "Thank you!" }); window.location.reload(); }} />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -130,12 +173,8 @@ function FundCard({ fund, currency }) {
               <span>Goal {formatCurrency(fund.goal, currency)}</span>
             </div>
           </div>
-
           <div className="pt-2">
-            <ContributionDialog fund={fund} currency={currency} onComplete={() => {
-              toast({ title: "Contribution recorded", description: "Thank you!" });
-              window.location.reload();
-            }} />
+            <ContributionDialog fund={fund} currency={currency} onComplete={() => { toast({ title: "Contribution recorded", description: "Thank you!" }); window.location.reload(); }} />
           </div>
         </div>
       </CardContent>

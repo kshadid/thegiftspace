@@ -15,7 +15,6 @@ from passlib.context import CryptContext
 from jose import jwt, JWTError
 import io
 import csv
-import asyncio
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -38,6 +37,7 @@ UPLOAD_TMP = UPLOAD_DIR / "tmp"
 UPLOAD_DIR.mkdir(exist_ok=True)
 UPLOAD_TMP.mkdir(parents=True, exist_ok=True)
 CHUNK_SIZE = 1048576  # 1MB
+MAX_UPLOAD_SIZE = 20 * 1024 * 1024  # 20MB
 
 # Create the main app without a prefix
 app = FastAPI()
@@ -55,6 +55,7 @@ async def ensure_indexes():
     await db.registries.create_index('owner_id')
     await db.funds.create_index('registry_id')
     await db.funds.create_index('updated_at')
+    await db.funds.create_index('order')
     await db.contributions.create_index('fund_id')
     await db.contributions.create_index('created_at')
     await db.uploads.create_index('created_at')
@@ -142,6 +143,7 @@ class FundIn(BaseModel):
     category: Optional[str] = None
     visible: bool = True
     order: Optional[int] = None
+    pinned: bool = False
 
 class Fund(FundIn):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -537,6 +539,10 @@ async def initiate_upload(body: UploadInitBody, current: UserPublic = Depends(ge
     reg = await db.registries.find_one({"id": body.registry_id})
     if not reg or not is_owner_or_collab(reg, current.id):
         raise HTTPException(status_code=403, detail="Not allowed")
+    if body.size > MAX_UPLOAD_SIZE:
+        raise HTTPException(status_code=413, detail="File too large")
+    if body.mime and not body.mime.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Only image uploads are allowed")
     upload_id = str(uuid.uuid4())
     tmp_dir = UPLOAD_TMP / upload_id
     tmp_dir.mkdir(parents=True, exist_ok=True)
@@ -560,10 +566,12 @@ async def upload_chunk(upload_id: str = Form(...), index: int = Form(...), chunk
     reg = await db.registries.find_one({"id": meta.get('registry_id')})
     if not reg or not is_owner_or_collab(reg, current.id):
         raise HTTPException(status_code=403, detail="Not allowed")
+    data = await chunk.read()
+    if len(data) > CHUNK_SIZE + 1024:
+        raise HTTPException(status_code=400, detail="Chunk too large")
     tmp_dir = UPLOAD_TMP / upload_id
     tmp_dir.mkdir(parents=True, exist_ok=True)
     part_path = tmp_dir / f"{index}.part"
-    data = await chunk.read()
     with open(part_path, "wb") as f:
         f.write(data)
     return {"ok": True}
