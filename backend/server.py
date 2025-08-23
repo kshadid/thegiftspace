@@ -365,12 +365,13 @@ async def admin_registries(query: Optional[str] = None, current: UserPublic = De
             {"couple_names": {"$regex": query, "$options": "i"}},
         ]}
     regs = await db.registries.find(q).sort("created_at", -1).to_list(100)
-    owner_ids = list({r['owner_id'] for r in regs})
-    owners = {u['id']: u for u in await db.users.find({"id": {"$in": owner_ids}}).to_list(len(owner_ids))}
+    owner_ids = list({r.get('owner_id') for r in regs if r.get('owner_id')})
+    owners = {u['id']: u for u in await db.users.find({"id": {"$in": owner_ids}}).to_list(len(owner_ids))} if owner_ids else {}
     out = []
     for r in regs:
         r.pop("_id", None)
-        out.append({**r, "owner_email": owners.get(r['owner_id'], {}).get('email')})
+        owner_id = r.get('owner_id')
+        out.append({**r, "owner_email": owners.get(owner_id, {}).get('email') if owner_id else None})
     return out
 
 class LockBody(BaseModel):
