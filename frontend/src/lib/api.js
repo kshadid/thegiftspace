@@ -97,6 +97,10 @@ export async function adminStats() {
   const { data } = await api.get(`/admin/stats`);
   return data;
 }
+export async function adminMetrics() {
+  const { data } = await api.get(`/admin/metrics`);
+  return data;
+}
 export async function adminUsers(query = "") {
   const { data } = await api.get(`/admin/users`, { params: { query } });
   return data;

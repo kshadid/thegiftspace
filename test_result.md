@@ -44,7 +44,7 @@
 ## metadata:
 ##   created_by: "main_agent"
 ##   version: "1.0"
-##   test_sequence: 9
+##   test_sequence: 10
 ##   run_ui: false
 ##
 ## test_plan:
@@ -161,7 +161,30 @@
 ##         -working: true
 ##         -agent: "main"
 ##         -comment: "Added AuditLog model, log writes on registry update/create, funds bulk_upsert, collaborator add/remove, and GET /registries/{id}/audit. Added env-driven CORS allowlist and Cache-Control headers for /api/files."
+##   - task: "Admin lifetime metrics endpoint"
+##     implemented: true
+##     working: true
+##     file: "/app/backend/server.py"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: true
+##     status_history:
+##         -working: true
+##         -agent: "main"
+##         -comment: "Added GET /api/admin/metrics returning active_events, active_gifts, average_amount, max_amount (lifetime)."
+## frontend:
+##   - task: "Admin overview KPIs (active events/gifts, avg, max)"
+##     implemented: true
+##     working: true
+##     file: "/app/frontend/src/pages/Admin.jsx"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: true
+##     status_history:
+##         -working: true
+##         -agent: "main"
+##         -comment: "Updated Admin Overview to fetch and display lifetime KPIs from /api/admin/metrics. Added Not authorized page with Back to home."
 
 ## agent_communication:
 ##     -agent: "main"
-##     -message: "Added backend audit logs + /api/registries/{id}/audit endpoint; dynamic CORS allowlist and Cache-Control headers for images. Please run backend tests for audit flows."
+##     -message: "Added admin lifetime metrics endpoint and wired Admin Overview KPIs. Please run backend tests for /api/admin/metrics and admin auth gating."

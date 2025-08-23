@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { adminMe, adminStats, adminUsers, adminRegistries, adminSetRegistryLock } from "../lib/api";
+import { adminMe, adminStats, adminMetrics, adminUsers, adminRegistries, adminSetRegistryLock } from "../lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -8,8 +8,9 @@ import { Label } from "../components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
 
 export default function AdminPage() {
-  const [isAdmin, setIsAdmin] = React.useState(false);
+  const [authorized, setAuthorized] = React.useState(false);
   const [stats, setStats] = React.useState(null);
+  const [metrics, setMetrics] = React.useState(null);
   const [uq, setUq] = React.useState("");
   const [rq, setRq] = React.useState("");
   const [users, setUsers] = React.useState([]);
@@ -19,21 +20,22 @@ export default function AdminPage() {
   const [lockReason, setLockReason] = React.useState("");
 
   React.useEffect(() => {
-    adminMe().then((m) => setIsAdmin(!!m.is_admin)).catch(() => setIsAdmin(false));
+    adminMe().then((m) => setAuthorized(!!m.is_admin)).catch(() => setAuthorized(false));
   }, []);
   React.useEffect(() => {
-    if (!isAdmin) return;
+    if (!authorized) return;
     adminStats().then(setStats).catch(() => setStats(null));
-  }, [isAdmin]);
+    adminMetrics().then(setMetrics).catch(() => setMetrics(null));
+  }, [authorized]);
 
   const searchUsers = async () => { setUsers(await adminUsers(uq)); };
   const searchRegs = async () => { setRegs(await adminRegistries(rq)); };
 
-  if (!isAdmin) {
+  if (!authorized) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-24 text-center">
-        <h1 className="text-2xl font-semibold">Admin</h1>
-        <p className="text-muted-foreground mt-2">You are not authorized to view this page.</p>
+        <h1 className="text-2xl font-semibold">Not authorized</h1>
+        <p className="text-muted-foreground mt-2">You don’t have access to this page.</p>
         <Link className="inline-block mt-6 underline" to="/">Back to home</Link>
       </div>
     );
@@ -47,12 +49,18 @@ export default function AdminPage() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4">
-        {/* Totals */}
+        {/* Overview */}
         <div className="grid md:grid-cols-4 gap-4">
           <Stat label="Users" value={stats?.counts?.users} />
           <Stat label="Events" value={stats?.counts?.registries} />
           <Stat label="Funds" value={stats?.counts?.funds} />
           <Stat label="Contributions" value={stats?.counts?.contributions} />
+        </div>
+        <div className="grid md:grid-cols-4 gap-4 mt-4">
+          <Stat label="Active events" value={metrics?.active_events} />
+          <Stat label="Active gifts" value={metrics?.active_gifts} />
+          <Stat label="Average amount" value={formatCurrency(metrics?.average_amount)} />
+          <Stat label="Max amount" value={formatCurrency(metrics?.max_amount)} />
         </div>
 
         {/* Recent */}
@@ -164,7 +172,7 @@ function Stat({ label, value }) {
   return (
     <Card>
       <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">{label}</CardTitle></CardHeader>
-      <CardContent><div className="text-2xl font-semibold">{value ?? 0}</div></CardContent>
+      <CardContent><div className="text-2xl font-semibold">{typeof value === 'number' ? value : (value || 0)}</div></CardContent>
     </Card>
   );
 }
@@ -175,4 +183,9 @@ function LockButton({ r, onOpen }) {
       {r.locked ? 'Locked' : 'Lock'}
     </button>
   );
+}
+
+function formatCurrency(amount, currency = "AED") {
+  try { return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(amount || 0); }
+  catch { return `${currency} ${Number(amount || 0).toFixed(2)}`; }
 }
