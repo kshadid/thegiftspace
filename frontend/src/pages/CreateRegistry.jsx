@@ -460,16 +460,14 @@ export default function CreateRegistry() {
                           </div>
                           <div className="grid grid-cols-3 gap-3">
                             <div>
-                              <Label className="text-xs">Goal ({registry.currency || DEFAULT_CURRENCY})</Label>
-                              <Input type="number" value={f.goal} onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, goal: Number(e.target.value || 0) } : x)))} />
-                            </div>
-                            <div>
                               <Label className="text-xs">Category</Label>
                               <Input value={f.category} onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, category: e.target.value } : x)))} />
                             </div>
-                            <div className="flex items-center gap-2 mt-6">
-                              <Switch id={`vis-${f.id}`} checked={f.visible !== false} onCheckedChange={(v) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, visible: !!v } : x)))} />
-                              <Label htmlFor={`vis-${f.id}`}>Visible</Label>
+                            <div className="col-span-2 flex items-center gap-3 justify-end">
+                              <label className="inline-flex items-center gap-1 text-xs border rounded px-2 py-1 cursor-pointer ml-auto">
+                                <UploadIcon className="size-3"/> Image
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && uploadFundImage(f.id, e.target.files[0])} />
+                              </label>
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
