@@ -110,20 +110,17 @@
 ##         -agent: "testing"
 ##         -comment: "Tested unique indexes - both email and registry slug correctly return 409 for duplicates. Rate limiting implemented but hard to test in K8s environment with distributed proxy IPs."
 ## frontend:
-##   - task: "Analytics UI + CSV export + visibility toggle"
+##   - task: "Event editor redesign (single page): analytics strip + gifts grid, Manage event dialog, Add gift button"
 ##     implemented: true
 ##     working: true
-##     file: "/app/frontend/src/pages/CreateRegistry.jsx, /app/frontend/src/lib/api.js, /app/frontend/src/pages/PublicRegistry.jsx"
+##     file: "/app/frontend/src/pages/CreateRegistry.jsx"
 ##     stuck_count: 0
 ##     priority: "high"
-##     needs_retesting: false
+##     needs_retesting: true
 ##     status_history:
 ##         -working: true
 ##         -agent: "main"
-##         -comment: "Added analytics tab, CSV export button, SEO tags on public page, guest email optional in contribution dialog."
-##         -working: true
-##         -agent: "testing"
-##         -comment: "Tested end-to-end UI flow. Analytics UI, CSV export functionality, and visibility toggles are working correctly. Gift management features including Pin/Visible toggles, reordering, and goal editing are functional."
+##         -comment: "Replaced tabs with a single-page layout: header, compact analytics strip, Add gift button, Manage event modal. Kept quick chips and inline goal editing."
 ##   - task: "Owner Dashboard with events list and quick stats"
 ##     implemented: true
 ##     working: true
@@ -138,6 +135,18 @@
 ##         -working: true
 ##         -agent: "testing"
 ##         -comment: "Tested complete dashboard functionality. User signup, event creation, navigation to /create with proper rid parameter, localStorage synchronization, analytics blocks display, and event listing all working correctly."
+## backend:
+##   - task: "List my registries endpoint"
+##     implemented: true
+##     working: true
+##     file: "/app/backend/server.py"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: true
+##     status_history:
+##         -working: true
+##         -agent: "main"
+##         -comment: "Added GET /api/registries/mine to fetch registries where user is owner or collaborator; sorted by updated_at desc."
 ## backend:
 ##   - task: "List my registries endpoint"
 ##     implemented: true
