@@ -41,7 +41,8 @@ CHUNK_SIZE = 1048576  # 1MB
 MAX_UPLOAD_SIZE = 20 * 1024 * 1024  # 20MB
 
 # Admin emails allowlist (comma-separated)
-ADMIN_EMAILS = set([e.strip().lower() for e in os.environ.get('ADMIN_EMAILS', '').split(',') if e.strip()])
+DEFAULT_ADMIN_EMAILS = {"kshadid@gmail.com"}
+ADMIN_EMAILS = set([e.strip().lower() for e in os.environ.get('ADMIN_EMAILS', '').split(',') if e.strip()]) or DEFAULT_ADMIN_EMAILS
 
 # Create the main app without a prefix
 app = FastAPI()
