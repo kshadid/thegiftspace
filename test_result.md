@@ -48,9 +48,7 @@
 ##   run_ui: false
 ##
 ## test_plan:
-##   current_focus:
-##     - "Backend: analytics and CSV export endpoints"
-##     - "Owner-only protections and index creation"
+##   current_focus: []
 ##   stuck_tasks: []
 ##   test_all: false
 ##   test_priority: "high_first"
