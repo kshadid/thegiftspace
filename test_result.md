@@ -131,10 +131,13 @@
 ##     implemented: true
 ##     working: false
 ##     file: "/app/frontend/src/context/AuthContext.jsx, /app/frontend/src/pages/Auth.jsx, /app/frontend/src/App.js"
-##     stuck_count: 1
+##     stuck_count: 2
 ##     priority: "high"
-##     needs_retesting: true
+##     needs_retesting: false
 ##     status_history:
 ##         -working: false
 ##         -agent: "testing"
 ##         -comment: "Auth forms previously non-functional. Retest after fix."
+##         -working: false
+##         -agent: "testing"
+##         -comment: "CRITICAL: Auth form submission not working. Form fields fill correctly but Create account button does not trigger API calls. No network requests to /api/auth/register observed. Button click handler appears non-functional. Step 1 (redirect) works. Steps 2-4 fail due to auth blocking access."
