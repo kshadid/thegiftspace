@@ -773,7 +773,9 @@ async def create_fund(registry_id: str, body: FundIn, current: UserPublic = Depe
         max_order = await db.funds.find({"registry_id": registry_id}).sort("order", -1).limit(1).to_list(1)
         body.order = (max_order[0].get("order", 0) + 1) if max_order else 1
     
-    fund = Fund(**body.model_dump(), registry_id=registry_id)
+    # Create fund data excluding the id field from FundIn
+    fund_data = body.model_dump(exclude={'id'})
+    fund = Fund(**fund_data, registry_id=registry_id)
     await db.funds.insert_one(fund.model_dump())
     await log_audit(registry_id, current.id, "fund.create", {"fund_id": fund.id, "title": body.title})
     return fund
