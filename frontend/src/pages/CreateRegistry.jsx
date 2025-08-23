@@ -17,6 +17,7 @@ import {
   saveFunds,
   DEFAULT_CURRENCY,
 } from "../mock/mock";
+import { getAccessToken } from "../lib/api";
 import { Plus, Trash2, Eye, EyeOff, ArrowDownToLine, GripVertical, UserPlus, X, Upload as UploadIcon, Copy, Pin, ChevronUp, ChevronDown, Cog } from "lucide-react";
 import { createRegistry as apiCreateRegistry, updateRegistry as apiUpdateRegistry, bulkUpsertFunds, getRegistryAnalytics, exportRegistryCSV, getRegistryById, addCollaborator, removeCollaborator } from "../lib/api";
 import { uploadFileChunked } from "../lib/uploads";
