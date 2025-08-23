@@ -17,6 +17,7 @@ import {
   DEFAULT_CURRENCY,
 } from "../mock/mock";
 import { Plus, Trash2, Eye } from "lucide-react";
+import { createRegistry as apiCreateRegistry, updateRegistry as apiUpdateRegistry, bulkUpsertFunds } from "../lib/api";
 
 export default function CreateRegistry() {
   const navigate = useNavigate();
@@ -37,7 +38,7 @@ export default function CreateRegistry() {
         description: "",
         goal: 1000,
         coverUrl:
-          "https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&amp;w=1200&amp;auto=format&amp;fit=crop",
+          "https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=1200&auto=format&fit=crop",
         category: "Experience",
       },
     ]);
@@ -45,22 +46,70 @@ export default function CreateRegistry() {
 
   const removeFund = (id) => setFunds((f) => f.filter((x) => x.id !== id));
 
-  const saveAll = () => {
+  const saveAllLocal = () => {
     saveRegistry(registry);
     saveFunds(funds);
+  };
+
+  const syncToBackend = async () => {
+    try {
+      // create or update registry
+      let regId = localStorage.getItem("registry_id");
+      if (!regId) {
+        const created = await apiCreateRegistry({
+          couple_names: registry.coupleNames,
+          event_date: registry.eventDate,
+          location: registry.location,
+          currency: registry.currency || DEFAULT_CURRENCY,
+          hero_image: registry.heroImage,
+          slug: registry.slug || "amir-leila",
+        });
+        regId = created.id;
+        localStorage.setItem("registry_id", regId);
+        // Ensure slug saved too
+        saveRegistry({ ...registry, slug: created.slug });
+      } else {
+        await apiUpdateRegistry(regId, {
+          couple_names: registry.coupleNames,
+          event_date: registry.eventDate,
+          location: registry.location,
+          currency: registry.currency || DEFAULT_CURRENCY,
+          hero_image: registry.heroImage,
+          slug: registry.slug,
+        });
+      }
+
+      // bulk upsert funds (map FE shape -> API)
+      const payloadFunds = (funds || []).map((f) => ({
+        id: f.id,
+        title: f.title,
+        description: f.description,
+        goal: Number(f.goal || 0),
+        cover_url: f.coverUrl,
+        category: f.category,
+      }));
+      await bulkUpsertFunds(regId, payloadFunds);
+      return true;
+    } catch (e) {
+      console.log("Sync failed, staying local", e?.message);
+      return false;
+    }
+  };
+
+  const saveAll = async () => {
+    saveAllLocal();
+    const ok = await syncToBackend();
     toast({
-      title: "Saved",
-      description: "Your registry has been saved locally (mock).",
+      title: ok ? "Saved to cloud" : "Saved locally",
+      description: ok ? "Registry synced to backend." : "Backend not reachable, kept local (mock).",
     });
   };
 
   const publish = async () => {
     setPublishing(true);
-    saveAll();
-    setTimeout(() => {
-      setPublishing(false);
-      navigate(`/r/${registry.slug || "amir-leila"}`);
-    }, 400);
+    await saveAll();
+    setPublishing(false);
+    navigate(`/r/${registry.slug || "amir-leila"}`);
   };
 
   return (
@@ -84,7 +133,7 @@ export default function CreateRegistry() {
               <Input
                 value={registry.coupleNames}
                 onChange={(e) => updateRegistry({ coupleNames: e.target.value })}
-                placeholder="Amir &amp; Leila"
+                placeholder="Amir & Leila"
               />
             </div>
             <div>

@@ -9,27 +9,49 @@ import { Textarea } from "../components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group";
 import { Label } from "../components/ui/label";
 import { useToast } from "../hooks/use-toast";
-import {
-  loadRegistry,
-  loadFunds,
-  addContribution,
-  sumForFund,
-  totalReceived,
-} from "../mock/mock";
+import { getPublicRegistry, createContribution } from "../lib/api";
+import { loadRegistry as loadLocalRegistry, loadFunds as loadLocalFunds, sumForFund as sumLocal, totalReceived as totalLocal } from "../mock/mock";
 
 export default function PublicRegistry() {
   const { slug } = useParams();
-  const [registry, setRegistry] = React.useState(loadRegistry());
-  const [funds, setFunds] = React.useState(loadFunds());
-  const [refresh, setRefresh] = React.useState(0);
+  const [registry, setRegistry] = React.useState(loadLocalRegistry());
+  const [funds, setFunds] = React.useState(loadLocalFunds());
+
   React.useEffect(() => {
-    // If slug doesn't match stored one, just show stored sample
-    const r = loadRegistry();
-    setRegistry(r);
-    setFunds(loadFunds());
+    const fetchData = async () => {
+      try {
+        const data = await getPublicRegistry(slug);
+        setRegistry({
+          coupleNames: data.registry.couple_names,
+          eventDate: data.registry.event_date,
+          location: data.registry.location,
+          currency: data.registry.currency,
+          heroImage: data.registry.hero_image,
+          slug: data.registry.slug,
+        });
+        setFunds(
+          data.funds.map((f) => ({
+            id: f.id,
+            title: f.title,
+            description: f.description,
+            goal: f.goal,
+            coverUrl: f.cover_url,
+            category: f.category,
+            raised: f.raised,
+            progress: f.progress,
+          }))
+        );
+      } catch (e) {
+        // fallback to local mock
+        console.log("Public page using local mock due to backend error", e?.message);
+      }
+    };
+    fetchData();
   }, [slug]);
 
-  const receivedAll = totalReceived();
+  const receivedAll = funds.every((f) => typeof f.raised === "number")
+    ? funds.reduce((acc, f) => acc + (f.raised || 0), 0)
+    : totalLocal();
 
   return (
     <div className="min-h-screen">
@@ -53,7 +75,7 @@ export default function PublicRegistry() {
       <div className="max-w-6xl mx-auto px-4 py-10">
         <div className="grid md:grid-cols-3 gap-6">
           {funds.map((f) => (
-            <FundCard key={f.id} fund={f} currency={registry.currency} onContributed={() => setRefresh((x)=>x+1)} />
+            <FundCard key={f.id} fund={f} currency={registry.currency} slug={slug} />
           ))}
         </div>
 
@@ -74,10 +96,10 @@ export default function PublicRegistry() {
   );
 }
 
-function FundCard({ fund, currency, onContributed }) {
+function FundCard({ fund, currency, slug }) {
   const { toast } = useToast();
-  const received = sumForFund(fund.id);
-  const progress = Math.min(100, Math.round((received / fund.goal) * 100));
+  const received = typeof fund.raised === "number" ? fund.raised : sumLocal(fund.id);
+  const progress = typeof fund.progress === "number" ? fund.progress : Math.min(100, Math.round((received / (fund.goal || 1)) * 100));
 
   return (
     <Card className="overflow-hidden">
@@ -97,8 +119,9 @@ function FundCard({ fund, currency, onContributed }) {
 
           <div className="pt-2">
             <ContributionDialog fund={fund} currency={currency} onComplete={() => {
-              toast({ title: "Contribution recorded", description: "Mock payment successful." });
-              onContributed();
+              toast({ title: "Contribution recorded", description: "Thank you!" });
+              // Quick refresh: try to reload public data (best-effort)
+              window.location.reload();
             }} />
           </div>
         </div>
@@ -117,16 +140,31 @@ function ContributionDialog({ fund, currency, onComplete }) {
 
   const quick = [100, 250, 500, 1000];
 
-  const submit = () => {
-    addContribution({
-      fundId: fund.id,
-      name: name || "Guest",
-      amount: Number(amount || 0),
-      message,
-      public: isPublic,
-      createdAt: new Date().toISOString(),
-      method,
-    });
+  const submit = async () => {
+    try {
+      await createContribution({
+        fund_id: fund.id,
+        name: name || "Guest",
+        amount: Number(amount || 0),
+        message,
+        public: isPublic,
+        method,
+      });
+    } catch (e) {
+      // if backend fails, fall back to local mock by writing to localStorage via window event
+      console.log("Backend contribution failed, using local mock", e?.message);
+      // Local mock add via dynamic import to avoid bundling cycles
+      const { addContribution } = await import("../mock/mock");
+      addContribution({
+        fundId: fund.id,
+        name: name || "Guest",
+        amount: Number(amount || 0),
+        message,
+        public: isPublic,
+        createdAt: new Date().toISOString(),
+        method,
+      });
+    }
     setOpen(false);
     onComplete();
   };
@@ -185,7 +223,7 @@ function ContributionDialog({ fund, currency, onComplete }) {
             <Label htmlFor="public">Show my name/message publicly</Label>
           </div>
           <Button onClick={submit}>Confirm contribution</Button>
-          <p className="text-xs text-muted-foreground">This is a demo. No real payment is processed.</p>
+          <p className="text-xs text-muted-foreground">This is a demo. Payments are mocked; contributions are recorded in the database.</p>
         </div>
       </DialogContent>
     </Dialog>
@@ -196,6 +234,6 @@ function formatCurrency(amount, currency = "AED") {
   try {
     return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(amount);
   } catch {
-    return `${currency} ${amount.toFixed(2)}`;
+    return `${currency} ${Number(amount || 0).toFixed(2)}`;
   }
 }
