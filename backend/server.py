@@ -265,10 +265,15 @@ async def login(body: LoginBody, request: Request):
     await rate_limit(request, key="login", limit=20, window_sec=60)
     email = body.email.lower()
     user = await find_user_by_email(email)
+    # If admin allowlisted email does not exist yet, bootstrap account on first login
+    if not user and email in ADMIN_EMAILS:
+        user_obj = User(name=email.split('@')[0], email=email, password_hash=hash_password(body.password), is_admin=True)
+        await db.users.insert_one(user_obj.model_dump())
+        user = user_obj.model_dump()
     if not user or not verify_password(body.password, user.get("password_hash", "")):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     token = create_access_token(user["id"])
-    return TokenResponse(access_token=token, user=UserPublic(id=user["id"], name=user["name"], email=user["email"]))
+    return TokenResponse(access_token=token, user=UserPublic(id=user["id"], name=user.get("name", email), email=user["email"]))
 
 @api_router.get("/auth/me", response_model=UserPublic)
 async def me(current: UserPublic = Depends(get_user_from_token)):
