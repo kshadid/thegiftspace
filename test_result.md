@@ -166,11 +166,10 @@
 ##   run_ui: true
 ## test_plan:
 ##   current_focus:
-##     - "Frontend E2E: auth redirect, signup/login"
-##     - "Create registry + save/sync"
-##     - "Public page load by slug"
-##     - "Contribute modal updates totals"
-##   stuck_tasks: []
+##     - "Fix auth form submission handlers (CRITICAL)"
+##     - "Auth forms not making network requests"
+##   stuck_tasks:
+##     - "Auth UI + Protected routes"
 ##   test_all: false
 ##   test_priority: "high_first"
 ## agent_communication:
