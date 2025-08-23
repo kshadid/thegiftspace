@@ -96,4 +96,4 @@
 
 ## agent_communication:
 ##     -agent: "main"
-##     -message: "Please run backend tests for /api/admin/users/{id}/detail, and then I will request frontend admin tests for navigating to /admin/u/:id and validating content."
+##     -message: "Added Resend email integration with guest contribution receipts and owner notifications. Implemented missing routes for registries, funds, contributions with email functionality wired to background tasks. Email service scaffolded but requires RESEND_API_KEY for actual sending. Please run backend tests for all contribution and email endpoints."
