@@ -88,4 +88,30 @@ export async function removeCollaborator(registryId, userId) {
   return data;
 }
 
+// Admin
+export async function adminMe() {
+  const { data } = await api.get(`/admin/me`);
+  return data;
+}
+export async function adminStats() {
+  const { data } = await api.get(`/admin/stats`);
+  return data;
+}
+export async function adminUsers(query = "") {
+  const { data } = await api.get(`/admin/users`, { params: { query } });
+  return data;
+}
+export async function adminRegistries(query = "") {
+  const { data } = await api.get(`/admin/registries`, { params: { query } });
+  return data;
+}
+export async function adminRegistryFunds(registryId) {
+  const { data } = await api.get(`/admin/registries/${registryId}/funds`);
+  return data;
+}
+export async function adminSetRegistryLock(registryId, { locked, reason }) {
+  const { data } = await api.post(`/admin/registries/${registryId}/lock`, { locked, reason });
+  return data;
+}
+
 export default api;
