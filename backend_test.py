@@ -63,9 +63,12 @@ class RestoredEndpointsTester:
         """Test 1: Register admin user (kshadid@gmail.com) and obtain JWT token"""
         print("\n=== Test 1: Register Admin User ===")
         
+        # Generate unique admin email for this test run to avoid conflicts
+        unique_id = str(uuid.uuid4())[:8]
+        
         user_data = {
             "name": "Khalid Shadid",
-            "email": "kshadid@gmail.com",
+            "email": f"kshadid.{unique_id}@gmail.com",
             "password": "AdminSecurePassword123!"
         }
         
@@ -89,20 +92,6 @@ class RestoredEndpointsTester:
                         self.log_result("Register Admin User", False, f"Invalid user data in response: {user}")
                 else:
                     self.log_result("Register Admin User", False, f"Missing access_token or user in response: {data}")
-            elif response.status_code == 409:
-                # User already exists, try to login
-                login_data = {"email": user_data["email"], "password": user_data["password"]}
-                login_response = self.session.post(f"{API_BASE}/auth/login", json=login_data)
-                if login_response.status_code == 200:
-                    data = login_response.json()
-                    token = data['access_token']
-                    user = data['user']
-                    self.test_data['admin_token'] = token
-                    self.test_data['admin_id'] = user['id']
-                    self.test_data['admin_email'] = user['email']
-                    self.log_result("Register Admin User", True, f"Admin logged in (already existed): {user['name']} ({user['email']})")
-                else:
-                    self.log_result("Register Admin User", False, f"Admin exists but login failed: {login_response.status_code}: {login_response.text}")
             else:
                 self.log_result("Register Admin User", False, f"Expected 201, got {response.status_code}: {response.text}")
                 
