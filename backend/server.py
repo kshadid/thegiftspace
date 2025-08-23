@@ -640,7 +640,428 @@ async def get_status_checks():
     status_checks = await db.status_checks.find().to_list(1000)
     return [StatusCheck(**status_check) for status_check in status_checks]
 
-# ... rest of routes unchanged ...
+# --- Registries ---
+@api_router.post("/registries", response_model=Registry, status_code=201)
+async def create_registry(body: RegistryCreate, current: UserPublic = Depends(get_user_from_token)):
+    slug_conflict = await db.registries.find_one({"slug": body.slug})
+    if slug_conflict:
+        raise HTTPException(status_code=409, detail="Slug already taken")
+    registry = Registry(**body.model_dump(), owner_id=current.id)
+    await db.registries.insert_one(registry.model_dump())
+    await log_audit(registry.id, current.id, "registry.create", {"slug": body.slug})
+    return registry
+
+@api_router.get("/registries", response_model=List[Registry])
+async def my_registries(current: UserPublic = Depends(get_user_from_token)):
+    items = await db.registries.find({"$or": [{"owner_id": current.id}, {"collaborators": {"$in": [current.id]}}]}).sort("created_at", -1).to_list(1000)
+    return [Registry(**{k: v for k, v in it.items() if k != "_id"}) for it in items]
+
+@api_router.get("/registries/{registry_id}", response_model=Registry)
+async def get_registry(registry_id: str, current: UserPublic = Depends(get_user_from_token)):
+    reg = await db.registries.find_one({"id": registry_id})
+    if not reg:
+        raise HTTPException(status_code=404, detail="Registry not found")
+    if not is_owner_or_collab(reg, current.id):
+        raise HTTPException(status_code=403, detail="Access denied")
+    reg.pop("_id", None)
+    return Registry(**reg)
+
+@api_router.put("/registries/{registry_id}", response_model=Registry)
+async def update_registry(registry_id: str, body: RegistryUpdate, current: UserPublic = Depends(get_user_from_token)):
+    reg = await db.registries.find_one({"id": registry_id})
+    if not reg:
+        raise HTTPException(status_code=404, detail="Registry not found")
+    if not is_owner_or_collab(reg, current.id):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    if body.slug and body.slug != reg.get("slug"):
+        slug_conflict = await db.registries.find_one({"slug": body.slug, "id": {"$ne": registry_id}})
+        if slug_conflict:
+            raise HTTPException(status_code=409, detail="Slug already taken")
+    
+    update_data = {k: v for k, v in body.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.utcnow()
+    
+    await db.registries.update_one({"id": registry_id}, {"$set": update_data})
+    await log_audit(registry_id, current.id, "registry.update", update_data)
+    
+    updated_reg = await db.registries.find_one({"id": registry_id})
+    updated_reg.pop("_id", None)
+    return Registry(**updated_reg)
+
+@api_router.delete("/registries/{registry_id}")
+async def delete_registry(registry_id: str, current: UserPublic = Depends(get_user_from_token)):
+    reg = await db.registries.find_one({"id": registry_id})
+    if not reg:
+        raise HTTPException(status_code=404, detail="Registry not found")
+    if reg.get("owner_id") != current.id:
+        raise HTTPException(status_code=403, detail="Only owners can delete registries")
+    
+    await db.registries.delete_one({"id": registry_id})
+    await db.funds.delete_many({"registry_id": registry_id})
+    await db.contributions.delete_many({"fund_id": {"$in": await db.funds.distinct("id", {"registry_id": registry_id})}})
+    await log_audit(registry_id, current.id, "registry.delete", {"slug": reg.get("slug")})
+    
+    return {"ok": True}
+
+# --- Public Registry ---
+@api_router.get("/public/registries/{slug}", response_model=PublicRegistryResponse)
+async def get_public_registry(slug: str):
+    reg = await db.registries.find_one({"slug": slug})
+    if not reg or reg.get("locked"):
+        raise HTTPException(status_code=404, detail="Registry not found")
+    
+    reg.pop("_id", None)
+    registry = Registry(**reg)
+    
+    funds = await db.funds.find({"registry_id": registry.id, "visible": True}).sort("order", 1).to_list(1000)
+    funds_with_totals = []
+    total_raised = 0.0
+    total_goal = 0.0
+    
+    for fund in funds:
+        fund.pop("_id", None)
+        fund_total = 0.0
+        contributions = await db.contributions.find({"fund_id": fund["id"]}).to_list(1000)
+        for contrib in contributions:
+            fund_total += contrib.get("amount", 0)
+        
+        total_raised += fund_total
+        total_goal += fund.get("goal", 0)
+        
+        funds_with_totals.append({
+            **fund,
+            "raised": fund_total,
+            "contributions_count": len(contributions)
+        })
+    
+    return PublicRegistryResponse(
+        registry=registry,
+        funds=funds_with_totals,
+        totals={"raised": total_raised, "goal": total_goal}
+    )
+
+# --- Funds ---
+@api_router.get("/registries/{registry_id}/funds", response_model=List[Fund])
+async def get_funds(registry_id: str, current: UserPublic = Depends(get_user_from_token)):
+    reg = await db.registries.find_one({"id": registry_id})
+    if not reg:
+        raise HTTPException(status_code=404, detail="Registry not found")
+    if not is_owner_or_collab(reg, current.id):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    items = await db.funds.find({"registry_id": registry_id}).sort("order", 1).to_list(1000)
+    return [Fund(**{k: v for k, v in it.items() if k != "_id"}) for it in items]
+
+@api_router.post("/registries/{registry_id}/funds", response_model=Fund, status_code=201)
+async def create_fund(registry_id: str, body: FundIn, current: UserPublic = Depends(get_user_from_token)):
+    reg = await db.registries.find_one({"id": registry_id})
+    if not reg:
+        raise HTTPException(status_code=404, detail="Registry not found")
+    if not is_owner_or_collab(reg, current.id):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    if body.order is None:
+        max_order = await db.funds.find({"registry_id": registry_id}).sort("order", -1).limit(1).to_list(1)
+        body.order = (max_order[0].get("order", 0) + 1) if max_order else 1
+    
+    fund = Fund(**body.model_dump(), registry_id=registry_id)
+    await db.funds.insert_one(fund.model_dump())
+    await log_audit(registry_id, current.id, "fund.create", {"fund_id": fund.id, "title": body.title})
+    return fund
+
+@api_router.put("/registries/{registry_id}/funds/{fund_id}", response_model=Fund)
+async def update_fund(registry_id: str, fund_id: str, body: FundIn, current: UserPublic = Depends(get_user_from_token)):
+    reg = await db.registries.find_one({"id": registry_id})
+    if not reg:
+        raise HTTPException(status_code=404, detail="Registry not found")
+    if not is_owner_or_collab(reg, current.id):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    fund = await db.funds.find_one({"id": fund_id, "registry_id": registry_id})
+    if not fund:
+        raise HTTPException(status_code=404, detail="Fund not found")
+    
+    update_data = body.model_dump()
+    update_data["updated_at"] = datetime.utcnow()
+    
+    await db.funds.update_one({"id": fund_id}, {"$set": update_data})
+    await log_audit(registry_id, current.id, "fund.update", {"fund_id": fund_id, "title": body.title})
+    
+    updated_fund = await db.funds.find_one({"id": fund_id})
+    updated_fund.pop("_id", None)
+    return Fund(**updated_fund)
+
+@api_router.delete("/registries/{registry_id}/funds/{fund_id}")
+async def delete_fund(registry_id: str, fund_id: str, current: UserPublic = Depends(get_user_from_token)):
+    reg = await db.registries.find_one({"id": registry_id})
+    if not reg:
+        raise HTTPException(status_code=404, detail="Registry not found")
+    if not is_owner_or_collab(reg, current.id):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    fund = await db.funds.find_one({"id": fund_id, "registry_id": registry_id})
+    if not fund:
+        raise HTTPException(status_code=404, detail="Fund not found")
+    
+    await db.funds.delete_one({"id": fund_id})
+    await db.contributions.delete_many({"fund_id": fund_id})
+    await log_audit(registry_id, current.id, "fund.delete", {"fund_id": fund_id, "title": fund.get("title")})
+    
+    return {"ok": True}
+
+# --- Contributions ---
+@api_router.post("/contributions", response_model=Contribution, status_code=201)
+async def create_contribution(
+    body: ContributionIn, 
+    request: Request,
+    background_tasks: BackgroundTasks
+):
+    await rate_limit(request, key="contribution", limit=5, window_sec=60)
+    
+    fund = await db.funds.find_one({"id": body.fund_id})
+    if not fund:
+        raise HTTPException(status_code=404, detail="Fund not found")
+    
+    registry = await db.registries.find_one({"id": fund["registry_id"]})
+    if not registry or registry.get("locked"):
+        raise HTTPException(status_code=404, detail="Registry not found or locked")
+    
+    contribution = Contribution(**body.model_dump())
+    await db.contributions.insert_one(contribution.model_dump())
+    await log_audit(registry["id"], None, "contribution.create", {
+        "fund_id": body.fund_id,
+        "amount": body.amount,
+        "guest_name": body.name or "Anonymous"
+    })
+    
+    # Send emails in background if configured
+    if RESEND_API_KEY:
+        guest_name = body.name or "Anonymous"
+        
+        # Send receipt to guest if email provided
+        if body.guest_email:
+            background_tasks.add_task(
+                send_contribution_receipt,
+                guest_email=body.guest_email,
+                guest_name=guest_name,
+                amount=body.amount,
+                currency=registry.get("currency", "AED"),
+                registry_couple_names=registry.get("couple_names", ""),
+                fund_title=fund.get("title", "")
+            )
+        
+        # Send notification to registry owner
+        owner = await db.users.find_one({"id": registry["owner_id"]})
+        if owner:
+            background_tasks.add_task(
+                send_owner_notification,
+                owner_email=owner["email"],
+                owner_name=owner.get("name", ""),
+                guest_name=guest_name,
+                amount=body.amount,
+                currency=registry.get("currency", "AED"),
+                fund_title=fund.get("title", ""),
+                message=body.message
+            )
+    
+    return contribution
+
+@api_router.get("/registries/{registry_id}/contributions")
+async def get_contributions(registry_id: str, current: UserPublic = Depends(get_user_from_token)):
+    reg = await db.registries.find_one({"id": registry_id})
+    if not reg:
+        raise HTTPException(status_code=404, detail="Registry not found")
+    if not is_owner_or_collab(reg, current.id):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    fund_ids = [f["id"] for f in await db.funds.find({"registry_id": registry_id}).to_list(1000)]
+    contributions = await db.contributions.find({"fund_id": {"$in": fund_ids}}).sort("created_at", -1).to_list(1000)
+    
+    for contrib in contributions:
+        contrib.pop("_id", None)
+    
+    return contributions
+
+@api_router.get("/registries/{registry_id}/analytics")
+async def get_analytics(registry_id: str, current: UserPublic = Depends(get_user_from_token)):
+    reg = await db.registries.find_one({"id": registry_id})
+    if not reg:
+        raise HTTPException(status_code=404, detail="Registry not found")
+    if not is_owner_or_collab(reg, current.id):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    fund_ids = [f["id"] for f in await db.funds.find({"registry_id": registry_id}).to_list(1000)]
+    
+    total_contributions = await db.contributions.count_documents({"fund_id": {"$in": fund_ids}})
+    
+    agg_result = await db.contributions.aggregate([
+        {"$match": {"fund_id": {"$in": fund_ids}}},
+        {"$group": {"_id": None, "total_amount": {"$sum": "$amount"}, "avg_amount": {"$avg": "$amount"}}}
+    ]).to_list(1)
+    
+    total_amount = agg_result[0]["total_amount"] if agg_result else 0
+    avg_amount = agg_result[0]["avg_amount"] if agg_result else 0
+    
+    # Daily breakdown for last 30 days
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    daily_stats = await db.contributions.aggregate([
+        {"$match": {"fund_id": {"$in": fund_ids}, "created_at": {"$gte": thirty_days_ago}}},
+        {"$group": {
+            "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_at"}},
+            "count": {"$sum": 1},
+            "amount": {"$sum": "$amount"}
+        }},
+        {"$sort": {"_id": 1}}
+    ]).to_list(30)
+    
+    return {
+        "total_contributions": total_contributions,
+        "total_amount": total_amount,
+        "average_amount": avg_amount,
+        "daily_stats": daily_stats
+    }
+
+@api_router.get("/registries/{registry_id}/export/csv")
+async def export_csv(registry_id: str, current: UserPublic = Depends(get_user_from_token)):
+    reg = await db.registries.find_one({"id": registry_id})
+    if not reg:
+        raise HTTPException(status_code=404, detail="Registry not found")
+    if not is_owner_or_collab(reg, current.id):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    fund_ids = [f["id"] for f in await db.funds.find({"registry_id": registry_id}).to_list(1000)]
+    contributions = await db.contributions.find({"fund_id": {"$in": fund_ids}}).sort("created_at", -1).to_list(10000)
+    
+    # Get fund titles for reference
+    funds = {f["id"]: f for f in await db.funds.find({"registry_id": registry_id}).to_list(1000)}
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Date", "Name", "Email", "Amount", "Fund", "Message", "Public", "Method"])
+    
+    for contrib in contributions:
+        fund_title = funds.get(contrib["fund_id"], {}).get("title", "Unknown Fund")
+        writer.writerow([
+            contrib["created_at"].strftime("%Y-%m-%d %H:%M:%S"),
+            contrib.get("name", ""),
+            contrib.get("guest_email", ""),
+            contrib["amount"],
+            fund_title,
+            contrib.get("message", ""),
+            "Yes" if contrib.get("public", True) else "No",
+            contrib.get("method", "")
+        ])
+    
+    output.seek(0)
+    headers = {
+        'Content-Disposition': f'attachment; filename="contributions_{registry_id}_{datetime.now().strftime("%Y%m%d")}.csv"'
+    }
+    
+    return StreamingResponse(
+        io.StringIO(output.getvalue()),
+        media_type="text/csv",
+        headers=headers
+    )
+
+# --- File Upload ---
+class ChunkUpload(BaseModel):
+    filename: str
+    chunk_index: int
+    total_chunks: int
+
+@api_router.post("/upload/chunk")
+async def upload_chunk(
+    file: UploadFile = File(...),
+    filename: str = Form(...),
+    chunk_index: int = Form(...),
+    total_chunks: int = Form(...),
+    current: UserPublic = Depends(get_user_from_token)
+):
+    if file.size and file.size > CHUNK_SIZE:
+        raise HTTPException(status_code=413, detail="Chunk size too large")
+    
+    # Create user-specific temp directory
+    user_tmp_dir = UPLOAD_TMP / current.id
+    user_tmp_dir.mkdir(exist_ok=True)
+    
+    chunk_path = user_tmp_dir / f"{filename}.part{chunk_index}"
+    
+    with open(chunk_path, "wb") as f:
+        content = await file.read()
+        f.write(content)
+    
+    # If this is the last chunk, combine all chunks
+    if chunk_index == total_chunks - 1:
+        final_filename = f"{uuid.uuid4()}_{filename}"
+        final_path = UPLOAD_DIR / final_filename
+        
+        with open(final_path, "wb") as final_file:
+            for i in range(total_chunks):
+                chunk_file_path = user_tmp_dir / f"{filename}.part{i}"
+                if chunk_file_path.exists():
+                    with open(chunk_file_path, "rb") as chunk_file:
+                        final_file.write(chunk_file.read())
+                    chunk_file_path.unlink()  # Delete chunk file
+        
+        # Save upload record
+        upload_record = {
+            "id": str(uuid.uuid4()),
+            "user_id": current.id,
+            "original_filename": filename,
+            "stored_filename": final_filename,
+            "size": final_path.stat().st_size,
+            "created_at": datetime.utcnow()
+        }
+        await db.uploads.insert_one(upload_record)
+        
+        return {"filename": final_filename, "url": f"/api/files/{final_filename}"}
+    
+    return {"chunk_received": chunk_index}
+
+# --- Admin Registry Detail ---
+@api_router.get("/admin/registries/{registry_id}/detail")
+async def admin_registry_detail(registry_id: str, current: UserPublic = Depends(get_user_from_token)):
+    if not await is_admin_user(current):
+        raise HTTPException(status_code=403, detail="Admin only")
+    
+    reg = await db.registries.find_one({"id": registry_id})
+    if not reg:
+        raise HTTPException(status_code=404, detail="Registry not found")
+    
+    reg.pop("_id", None)
+    
+    # Get owner info
+    owner = await db.users.find_one({"id": reg["owner_id"]}, {"password_hash": 0})
+    if owner:
+        owner.pop("_id", None)
+    
+    # Get funds
+    funds = await db.funds.find({"registry_id": registry_id}).sort("order", 1).to_list(1000)
+    for f in funds:
+        f.pop("_id", None)
+    
+    # Get contributions with totals
+    fund_ids = [f["id"] for f in funds]
+    contributions = await db.contributions.find({"fund_id": {"$in": fund_ids}}).sort("created_at", -1).to_list(1000)
+    for c in contributions:
+        c.pop("_id", None)
+    
+    total_amount = sum(c.get("amount", 0) for c in contributions)
+    
+    # Get audit logs
+    audit_logs = await db.audit_logs.find({"registry_id": registry_id}).sort("created_at", -1).to_list(50)
+    for a in audit_logs:
+        a.pop("_id", None)
+    
+    return {
+        "registry": reg,
+        "owner": owner,
+        "funds": funds,
+        "contributions": contributions,
+        "total_amount": total_amount,
+        "audit_logs": audit_logs
+    }
 
 # Include the router in the main app
 app.include_router(api_router)
