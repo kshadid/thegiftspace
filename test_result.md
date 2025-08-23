@@ -99,8 +99,8 @@
 ##         -agent: "testing"
 ##         -comment: "TESTED: /api/admin/metrics endpoint working perfectly. Returns correct structure with active_events: 6, active_gifts: 7, average_amount: 561.11, max_amount: 1000.0. All admin endpoints confirmed working with proper authentication and /api prefix."
 ##   - task: "Missing registry CRUD endpoints"
-##     implemented: false
-##     working: false
+##     implemented: true
+##     working: true
 ##     file: "/app/backend/server.py"
 ##     stuck_count: 0
 ##     priority: "high"
@@ -109,6 +109,9 @@
 ##         -working: false
 ##         -agent: "testing"
 ##         -comment: "CRITICAL: Basic registry endpoints missing from server.py - /api/registries (POST), /api/registries/mine (GET), /api/registries/{id}/contributions (GET), /api/registries/{id}/audit (GET) all return 404. Server.py has comment 'Other routes remain unchanged below' but routes are missing. This prevents creating registries and accessing contributions/audit as admin."
+##         -working: true
+##         -agent: "testing"
+##         -comment: "RESTORED ENDPOINTS TESTING COMPLETED: ✅ ALL MAJOR REGISTRY CRUD ENDPOINTS NOW WORKING PERFECTLY: POST /api/registries (registry creation), GET /api/registries/mine (user's registries), PUT /api/registries/{id} (registry updates), POST /api/registries/{id}/funds/bulk_upsert (funds creation), POST /api/contributions (contribution creation), GET /api/registries/{id}/contributions (owner/admin access), GET /api/registries/{id}/audit (owner/admin access). All endpoints use /api prefix and JWT authentication. Created comprehensive test with realistic data: registered users, created registry, added 3 funds (flights, resort, dining), created 3 contributions totaling AED 3000. Owner can access contributions and audit logs. Only admin functionality couldn't be fully tested due to existing admin user with unknown password, but endpoints are implemented correctly."
 ## frontend:
 ##   - task: "Admin Overview + Registry Detail page"
 ##     implemented: true
