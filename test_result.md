@@ -161,7 +161,6 @@
 ##   run_ui: false
 ## test_plan:
 ##   current_focus:
-##     - "Test backend endpoints (create registry, bulk_upsert, public, contribution)"
 ##     - "Verify frontend sync to backend and fallback works"
 ##   stuck_tasks: []
 ##   test_all: false
@@ -169,3 +168,5 @@
 ## agent_communication:
 ##     -agent: "main"
 ##     -message: "Please run backend tests first using the contracts; ensure /api prefix and Mongo are used. Then we will decide on UI automation."
+##     -agent: "testing"
+##     -message: "✅ BACKEND TESTING COMPLETE: All 7 core backend endpoints tested successfully with realistic data. Fixed ObjectId serialization issue in public registry endpoint. All CRUD operations, aggregations, and data persistence working correctly. Backend is fully functional and ready for production. Main agent should now focus on frontend integration testing or summarize and finish if backend-only testing was the goal."
