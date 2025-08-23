@@ -112,15 +112,18 @@
 ## frontend:
 ##   - task: "Admin Overview + Registry Detail page"
 ##     implemented: true
-##     working: true
+##     working: false
 ##     file: "/app/frontend/src/pages/Admin.jsx, /app/frontend/src/pages/AdminRegistryDetail.jsx, /app/frontend/src/App.js, /app/frontend/src/lib/api.js"
 ##     stuck_count: 0
 ##     priority: "high"
-##     needs_retesting: true
+##     needs_retesting: false
 ##     status_history:
 ##         -working: true
 ##         -agent: "main"
 ##         -comment: "Admin registry Manage links, registry detail page with funds, latest contributions, audit log, and lock/unlock dialog."
+##         -working: false
+##         -agent: "testing"
+##         -comment: "TESTED: Admin Overview page working perfectly - all stats cards display correctly (Users: 16, Events: 14, Funds: 12, Contributions: 9, Active events: 6, Active gifts: 7, Average amount: AED 561.11, Max amount: AED 1,000.00). Admin authentication working, 'Manage' links present. CRITICAL ISSUE: Admin Registry Detail page fails to load due to missing backend endpoints - /api/registries/{id} returns 404. This prevents viewing registry details, lock/unlock functionality, and accessing contributions/audit data. Frontend code is correct but backend endpoints are missing."
 
 ## agent_communication:
 ##     -agent: "main"
