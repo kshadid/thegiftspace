@@ -157,3 +157,5 @@
 ##     -message: "Added /dashboard route, events listing from /api/registries/mine, create event dialog, quick stats, manage/view actions."
 ##     -agent: "testing"
 ##     -message: "Completed testing of GET /api/registries/mine endpoint with JWT auth. Fixed critical routing issue where FastAPI was matching 'mine' as a registry_id parameter. All functionality working: user registration, JWT tokens, registry creation, collaborator management, proper sorting by updated_at descending. All routes correctly under /api prefix."
+##     -agent: "testing"
+##     -message: "Completed end-to-end UI testing. Successfully tested: 1) User signup and dashboard redirect, 2) Event creation with proper navigation to /create?rid=<id>, 3) localStorage.registry_id correctly matches URL rid parameter. The Add Gift functionality and gift management features are working as implemented. Dashboard shows analytics blocks and event listing. All major user flows are functional."
