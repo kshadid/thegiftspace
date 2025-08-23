@@ -83,7 +83,18 @@
 ##         -comment: "Added /registries/{id}/analytics and /registries/{id}/contributions/export/csv; protected; tested locally via FE." 
 ##         -working: true
 ##         -agent: "testing"
-##         -comment: "Analytics endpoint working correctly - returns total, count, average, by_fund[], daily[] with accurate data. CSV export working - returns text/csv with proper headers: created_at,fund_title,amount,name,message,method,public." 
+##         -comment: "Analytics endpoint working correctly - returns total, count, average, by_fund[], daily[] with accurate data. CSV export working - returns text/csv with proper headers: created_at,fund_title,amount,name,message,method,public."
+##   - task: "Visibility flag functionality"
+##     implemented: true
+##     working: true
+##     file: "/app/backend/server.py"
+##     stuck_count: 0
+##     priority: "medium"
+##     needs_retesting: false
+##     status_history:
+##         -working: true
+##         -agent: "testing"
+##         -comment: "Visibility flag working correctly - funds with visible=false are excluded from public API /registries/{slug}/public endpoint." 
 ##   - task: "Indexes & rate limiting"
 ##     implemented: true
 ##     working: true
