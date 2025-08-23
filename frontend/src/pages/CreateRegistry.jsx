@@ -417,6 +417,8 @@ export default function CreateRegistry() {
                               <Label htmlFor={`sel-${f.id}`} className="text-xs">Select</Label>
                             </div>
                             <div className="flex items-center gap-2">
+                              <Button size="icon" variant="secondary" onClick={() => moveFundUp(f.id)} title="Move up"><ChevronUp className="size-4"/></Button>
+                              <Button size="icon" variant="secondary" onClick={() => moveFundDown(f.id)} title="Move down"><ChevronDown className="size-4"/></Button>
                               <Button size="icon" variant="secondary" onClick={() => duplicateFund(f)} title="Duplicate"><Copy className="size-4"/></Button>
                               <Button size="icon" variant="destructive" onClick={() => removeFund(f.id)} title="Delete"><Trash2 className="size-4" /></Button>
                             </div>
