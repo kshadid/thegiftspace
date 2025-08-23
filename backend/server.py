@@ -799,6 +799,8 @@ async def update_fund(registry_id: str, fund_id: str, body: FundIn, current: Use
     await log_audit(registry_id, current.id, "fund.update", {"fund_id": fund_id, "title": body.title})
     
     updated_fund = await db.funds.find_one({"id": fund_id})
+    if not updated_fund:
+        raise HTTPException(status_code=404, detail="Fund not found after update")
     updated_fund.pop("_id", None)
     return Fund(**updated_fund)
 
