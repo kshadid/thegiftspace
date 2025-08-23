@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Backend API Testing Suite for Honeymoon Registry MVP - Restored Endpoints Focus
-Tests restored registry CRUD endpoints, admin functionality, and lock/unlock features
+Comprehensive Backend API Testing Suite for Wedding Registry MVP
+Tests Resend email integration, missing routes, authentication, and authorization
 """
 
 import requests
@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 import os
 from pathlib import Path
 import time
+import io
 
 # Load environment variables to get the backend URL
 def load_env_file(file_path):
