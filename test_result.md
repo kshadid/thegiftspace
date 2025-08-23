@@ -128,12 +128,15 @@
 ##         -comment: "Public registry and contribution flows pass."
 ##   - task: "Auth UI + Protected routes"
 ##     implemented: true
-##     working: false
+##     working: true
 ##     file: "/app/frontend/src/context/AuthContext.jsx, /app/frontend/src/pages/Auth.jsx, /app/frontend/src/App.js"
 ##     stuck_count: 2
 ##     priority: "high"
-##     needs_retesting: true
+##     needs_retesting: false
 ##     status_history:
 ##         -working: false
 ##         -agent: "testing"
 ##         -comment: "Auth forms previously non-functional. Retest after fix."
+##         -working: true
+##         -agent: "testing"
+##         -comment: "✅ E2E PASS: Auth forms now work with onSubmit. Registration API called successfully, navigation to /create works, registry creation/save works with API calls to /api/registries and bulk_upsert, preview navigation works, contribution flow works with API calls and totals update correctly."
