@@ -152,3 +152,21 @@
 ## agent_communication:
 ##     -agent: "main"
 ##     -message: "Awaiting user approval to run automated frontend tests."
+
+## metadata:
+##   created_by: "main_agent"
+##   version: "1.0"
+##   test_sequence: 4
+##   run_ui: true
+## test_plan:
+##   current_focus:
+##     - "Frontend E2E: auth redirect, signup/login"
+##     - "Create registry + save/sync"
+##     - "Public page load by slug"
+##     - "Contribute modal updates totals"
+##   stuck_tasks: []
+##   test_all: false
+##   test_priority: "high_first"
+## agent_communication:
+##     -agent: "main"
+##     -message: "Proceed with automated frontend testing now. Use http://localhost:3000. Ensure /create redirects to /auth when unauthenticated, then full happy path."
