@@ -48,8 +48,8 @@ export default function AuthPage() {
         <CardContent>
           <Tabs defaultValue="login">
             <TabsList className="grid grid-cols-2 w-full">
-              <TabsTrigger value="login">Log in</TabsTrigger>
-              <TabsTrigger value="signup">Create account</TabsTrigger>
+              <TabsTrigger value="login">Sign in</TabsTrigger>
+              <TabsTrigger value="signup">Sign up</TabsTrigger>
             </TabsList>
             <TabsContent value="login" className="mt-4">
               <LoginForm onLogin={onLogin} loading={loading} />
