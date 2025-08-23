@@ -16,8 +16,16 @@ import {
   saveFunds,
   DEFAULT_CURRENCY,
 } from "../mock/mock";
-import { Plus, Trash2, Eye, ArrowDownToLine, GripVertical, UserPlus, X } from "lucide-react";
+import { Plus, Trash2, Eye, ArrowDownToLine, GripVertical, UserPlus, X, Upload as UploadIcon } from "lucide-react";
 import { createRegistry as apiCreateRegistry, updateRegistry as apiUpdateRegistry, bulkUpsertFunds, getRegistryAnalytics, exportRegistryCSV, getRegistryById, addCollaborator, removeCollaborator } from "../lib/api";
+import { uploadFileChunked } from "../lib/uploads";
+
+const heroPresets = [
+  "https://images.unsplash.com/photo-1520440718111-45fe694b330a?q=80&w=1920&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1920&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1920&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1491553895911-0055eca6402d?q=80&w=1920&auto=format&fit=crop",
+];
 
 export default function CreateRegistry() {
   const navigate = useNavigate();
@@ -29,6 +37,8 @@ export default function CreateRegistry() {
   const [analytics, setAnalytics] = React.useState(null);
   const [collaborators, setCollaborators] = React.useState([]);
   const [collabEmail, setCollabEmail] = React.useState("");
+  const [heroUploading, setHeroUploading] = React.useState(0);
+  const [fundUploading, setFundUploading] = React.useState({});
   const dragId = React.useRef(null);
 
   const updateRegistry = (patch) => setRegistry((r) => ({ ...r, ...patch }));
@@ -155,6 +165,41 @@ export default function CreateRegistry() {
     }
   };
 
+  const uploadHero = async (file) => {
+    const regId = getRegId();
+    if (!regId) {
+      const ok = await syncToBackend();
+      if (!ok) return toast({ title: "Save first", description: "Please save your registry before uploading." });
+    }
+    const finalRegId = getRegId();
+    try {
+      setHeroUploading(1);
+      const { url } = await uploadFileChunked({ file, registryId: finalRegId, onProgress: setHeroUploading });
+      updateRegistry({ heroImage: url });
+      toast({ title: "Hero updated" });
+    } catch (e) {
+      toast({ title: "Upload failed", description: e?.message || "Try again." });
+    } finally {
+      setHeroUploading(0);
+    }
+  };
+
+  const uploadFundImage = async (fundId, file) => {
+    const finalRegId = getRegId();
+    if (!finalRegId) return toast({ title: "Save first", description: "Please save your registry before uploading." });
+    const setProg = (pct) => setFundUploading((m) => ({ ...m, [fundId]: pct }));
+    try {
+      setProg(1);
+      const { url } = await uploadFileChunked({ file, registryId: finalRegId, onProgress: setProg });
+      setFunds((all) => all.map((f) => (f.id === fundId ? { ...f, coverUrl: url } : f)));
+      toast({ title: "Image updated" });
+    } catch (e) {
+      toast({ title: "Upload failed", description: e?.message || "Try again." });
+    } finally {
+      setProg(0);
+    }
+  };
+
   React.useEffect(() => {
     const regId = getRegId();
     if (activeTab === "analytics" && regId) {
@@ -247,8 +292,25 @@ export default function CreateRegistry() {
                     </Select>
                   </div>
                   <div className="md:col-span-2">
-                    <Label>Hero image URL</Label>
-                    <Input value={registry.heroImage} onChange={(e) => updateRegistry({ heroImage: e.target.value })} placeholder="https://…" />
+                    <Label>Hero image</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Input value={registry.heroImage} onChange={(e) => updateRegistry({ heroImage: e.target.value })} placeholder="https://…" />
+                      <label className="inline-flex items-center gap-2 border rounded px-3 py-2 cursor-pointer">
+                        <UploadIcon className="size-4" /> Upload
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && uploadHero(e.target.files[0])} />
+                      </label>
+                    </div>
+                    {heroUploading > 0 ? <div className="text-xs text-muted-foreground mt-1">Uploading… {heroUploading}%</div> : null}
+                    <div className="mt-3">
+                      <div className="text-xs text-muted-foreground mb-1">Or choose a preset</div>
+                      <div className="grid grid-cols-4 gap-2">
+                        {heroPresets.map((u) => (
+                          <button key={u} className="border rounded overflow-hidden hover:opacity-90" onClick={() => updateRegistry({ heroImage: u })}>
+                            <img src={u} alt="preset" className="w-full h-16 object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -282,10 +344,17 @@ export default function CreateRegistry() {
                         <div className="absolute top-2 left-2 text-xs bg-black/50 text-white px-2 py-1 rounded flex items-center gap-1"><GripVertical className="size-3"/>Drag</div>
                       </div>
                       <div className="p-4 space-y-3">
-                        <div>
-                          <Label className="text-xs">Title</Label>
-                          <Input value={f.title} onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, title: e.target.value } : x)))} />
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 mr-2">
+                            <Label className="text-xs">Title</Label>
+                            <Input value={f.title} onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, title: e.target.value } : x)))} />
+                          </div>
+                          <label className="inline-flex items-center gap-1 text-xs border rounded px-2 py-1 cursor-pointer mt-6">
+                            <UploadIcon className="size-3"/> Image
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && uploadFundImage(f.id, e.target.files[0])} />
+                          </label>
                         </div>
+                        {fundUploading[f.id] > 0 ? <div className="text-xs text-muted-foreground">Uploading… {fundUploading[f.id]}%</div> : null}
                         <div>
                           <Label className="text-xs">Description</Label>
                           <Textarea value={f.description} onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, description: e.target.value } : x)))} />
@@ -303,10 +372,6 @@ export default function CreateRegistry() {
                             <Switch id={`vis-${f.id}`} checked={f.visible !== false} onCheckedChange={(v) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, visible: !!v } : x)))} />
                             <Label htmlFor={`vis-${f.id}`}>Visible</Label>
                           </div>
-                        </div>
-                        <div>
-                          <Label className="text-xs">Image URL</Label>
-                          <Input value={f.coverUrl} onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, coverUrl: e.target.value } : x)))} />
                         </div>
                         <div className="flex items-center justify-between pt-2">
                           <Button variant="destructive" size="icon" onClick={() => removeFund(f.id)}><Trash2 className="size-4" /></Button>
@@ -349,13 +414,37 @@ export default function CreateRegistry() {
                       <Stat label="Contributions" value={String(analytics.count)} />
                       <Stat label="Average gift" value={formatCurrency(analytics.average, registry.currency)} />
                     </div>
+                    <div className="mt-6 grid md:grid-cols-2 gap-6">
+                      <div>
+                        <div className="font-medium mb-2">By fund</div>
+                        <div className="space-y-2">
+                          {analytics.by_fund.map((f) => (
+                            <div key={f.fund_id} className="flex items-center justify-between text-sm">
+                              <span className="text-muted-foreground">{f.title}</span>
+                              <span className="font-medium">{formatCurrency(f.sum, registry.currency)} ({f.count})</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-medium mb-2">By method</div>
+                        <div className="space-y-2">
+                          {analytics.by_method.map((m) => (
+                            <div key={m.method} className="flex items-center justify-between text-sm">
+                              <span className="text-muted-foreground">{m.method}</span>
+                              <span className="font-medium">{formatCurrency(m.sum, registry.currency)} ({m.count})</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                     <div className="mt-6">
-                      <div className="font-medium mb-2">By fund</div>
-                      <div className="space-y-2">
-                        {analytics.by_fund.map((f) => (
-                          <div key={f.fund_id} className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">{f.title}</span>
-                            <span className="font-medium">{formatCurrency(f.sum, registry.currency)} ({f.count})</span>
+                      <div className="font-medium mb-2">Recent</div>
+                      <div className="space-y-1 text-sm">
+                        {analytics.recent.map((r, i) => (
+                          <div key={i} className="flex items-center justify-between">
+                            <span className="text-muted-foreground">{r.name}</span>
+                            <span className="font-medium">{formatCurrency(r.amount, registry.currency)}</span>
                           </div>
                         ))}
                       </div>

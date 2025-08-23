@@ -1,5 +1,6 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header, Request
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header, Request, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -31,15 +32,21 @@ JWT_EXPIRE_MINUTES = int(os.environ.get('JWT_EXPIRE_MINUTES', '1440'))  # 24h de
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Email settings (stubbed for now)
-SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
-SENDGRID_FROM = os.environ.get('SENDGRID_FROM', 'no-reply@example.com')
+# File storage
+UPLOAD_DIR = ROOT_DIR / "uploads"
+UPLOAD_TMP = UPLOAD_DIR / "tmp"
+UPLOAD_DIR.mkdir(exist_ok=True)
+UPLOAD_TMP.mkdir(parents=True, exist_ok=True)
+CHUNK_SIZE = 1048576  # 1MB
 
 # Create the main app without a prefix
 app = FastAPI()
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
+
+# Serve uploaded files under /api/files
+app.mount("/api/files", StaticFiles(directory=str(UPLOAD_DIR)), name="files")
 
 # ===== Utilities =====
 async def ensure_indexes():
@@ -50,6 +57,7 @@ async def ensure_indexes():
     await db.funds.create_index('updated_at')
     await db.contributions.create_index('fund_id')
     await db.contributions.create_index('created_at')
+    await db.uploads.create_index('created_at')
 
 _rate_store: Dict[str, List[float]] = {}
 
@@ -64,7 +72,7 @@ async def rate_limit(req: Request, key: str, limit: int, window_sec: int = 60):
     lst.append(now)
     _rate_store[k] = lst
 
-# ===== Existing demo models (keep) =====
+# ===== Existing demo models (keep minimal) =====
 class StatusCheck(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     client_name: str
@@ -200,11 +208,6 @@ async def get_user_from_token(authorization: Optional[str] = Header(None)) -> Us
 def is_owner_or_collab(reg: dict, user_id: str) -> bool:
     return reg.get("owner_id") == user_id or user_id in (reg.get("collaborators") or [])
 
-# ===== Email helper (mocked) =====
-async def send_email_async(to_email: str, subject: str, html: str):
-    # Emails are deferred per user request; keep stub for later activation
-    logging.info(f"Email (deferred): to={to_email} subject={subject}")
-
 # ===== Routes =====
 @api_router.get("/")
 async def root():
@@ -253,7 +256,7 @@ async def get_status_checks():
     status_checks = await db.status_checks.find().to_list(1000)
     return [StatusCheck(**status_check) for status_check in status_checks]
 
-# --- Registries (auth required except public view) ---
+# --- Registries ---
 @api_router.post("/registries", response_model=Registry, status_code=201)
 async def create_registry(payload: RegistryCreate, current: UserPublic = Depends(get_user_from_token)):
     existing = await db.registries.find_one({"slug": payload.slug})
@@ -366,14 +369,6 @@ async def create_contribution(payload: ContributionIn):
         raise HTTPException(status_code=404, detail="Fund not found")
     contrib = Contribution(**payload.model_dump())
     await db.contributions.insert_one(contrib.model_dump())
-
-    # Email deferred (stub)
-    try:
-        if False and SENDGRID_API_KEY:  # disabled per user request
-            pass
-    except Exception as e:
-        logging.warning(f"Email dispatch error: {e}")
-
     return contrib
 
 @api_router.get("/funds/{fund_id}/contributions", response_model=List[Contribution])
@@ -387,7 +382,7 @@ async def list_contributions(fund_id: str, current: Optional[UserPublic] = Depen
     items = await db.contributions.find({"fund_id": fund_id}).to_list(1000)
     return [Contribution(**it) for it in items]
 
-# --- Owner analytics & exports ---
+# --- Analytics & Export ---
 @api_router.get("/registries/{registry_id}/contributions", response_model=List[Contribution])
 async def list_registry_contributions(registry_id: str, current: UserPublic = Depends(get_user_from_token)):
     reg = await db.registries.find_one({"id": registry_id})
@@ -474,7 +469,23 @@ async def registry_analytics(registry_id: str, current: UserPublic = Depends(get
     daily_raw = await db.contributions.aggregate(daily_pipeline).to_list(1000)
     daily = [{"date": x['_id'], "sum": float(x['sum'])} for x in daily_raw]
 
-    return {"total": total, "count": count, "average": avg, "by_fund": by_fund, "daily": daily}
+    by_method_pipeline = [
+        {"$match": {"fund_id": {"$in": fund_ids}}},
+        {"$group": {"_id": "$method", "sum": {"$sum": "$amount"}, "count": {"$sum": 1}}},
+        {"$sort": {"sum": -1}}
+    ]
+    by_method_raw = await db.contributions.aggregate(by_method_pipeline).to_list(50)
+    by_method = [
+        {"method": x.get('_id') or 'unknown', "sum": float(x['sum']), "count": int(x['count'])}
+        for x in by_method_raw
+    ]
+
+    recent = await db.contributions.find({"fund_id": {"$in": fund_ids}}).sort("created_at", -1).to_list(5)
+    recent = [
+        {"name": r.get('name', 'Guest'), "amount": float(r.get('amount', 0)), "message": r.get('message'), "created_at": r.get('created_at')} for r in recent
+    ]
+
+    return {"total": total, "count": count, "average": avg, "by_fund": by_fund, "daily": daily, "by_method": by_method, "recent": recent}
 
 # --- Collaborators ---
 class CollaboratorAdd(BaseModel):
@@ -509,6 +520,98 @@ async def remove_collaborator(registry_id: str, user_id: str, current: UserPubli
         collabs.remove(user_id)
         await db.registries.update_one({"id": registry_id}, {"$set": {"collaborators": list(collabs), "updated_at": datetime.utcnow()}})
     return {"ok": True}
+
+# --- Chunked Uploads ---
+class UploadInitBody(BaseModel):
+    filename: str
+    size: int
+    mime: Optional[str] = None
+    registry_id: str
+
+class UploadInitResponse(BaseModel):
+    upload_id: str
+    chunk_size: int
+
+@api_router.post("/uploads/initiate", response_model=UploadInitResponse)
+async def initiate_upload(body: UploadInitBody, current: UserPublic = Depends(get_user_from_token)):
+    reg = await db.registries.find_one({"id": body.registry_id})
+    if not reg or not is_owner_or_collab(reg, current.id):
+        raise HTTPException(status_code=403, detail="Not allowed")
+    upload_id = str(uuid.uuid4())
+    tmp_dir = UPLOAD_TMP / upload_id
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    meta = {
+        "upload_id": upload_id,
+        "filename": body.filename,
+        "size": body.size,
+        "mime": body.mime,
+        "registry_id": body.registry_id,
+        "created_at": datetime.utcnow(),
+        "completed": False,
+    }
+    await db.uploads.insert_one(meta)
+    return UploadInitResponse(upload_id=upload_id, chunk_size=CHUNK_SIZE)
+
+@api_router.post("/uploads/chunk")
+async def upload_chunk(upload_id: str = Form(...), index: int = Form(...), chunk: UploadFile = File(...), current: UserPublic = Depends(get_user_from_token)):
+    meta = await db.uploads.find_one({"upload_id": upload_id})
+    if not meta:
+        raise HTTPException(status_code=404, detail="Upload not found")
+    reg = await db.registries.find_one({"id": meta.get('registry_id')})
+    if not reg or not is_owner_or_collab(reg, current.id):
+        raise HTTPException(status_code=403, detail="Not allowed")
+    tmp_dir = UPLOAD_TMP / upload_id
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    part_path = tmp_dir / f"{index}.part"
+    data = await chunk.read()
+    with open(part_path, "wb") as f:
+        f.write(data)
+    return {"ok": True}
+
+class UploadCompleteBody(BaseModel):
+    upload_id: str
+
+class UploadCompleteResponse(BaseModel):
+    url: str
+
+@api_router.post("/uploads/complete", response_model=UploadCompleteResponse)
+async def complete_upload(body: UploadCompleteBody, current: UserPublic = Depends(get_user_from_token)):
+    meta = await db.uploads.find_one({"upload_id": body.upload_id})
+    if not meta:
+        raise HTTPException(status_code=404, detail="Upload not found")
+    reg = await db.registries.find_one({"id": meta.get('registry_id')})
+    if not reg or not is_owner_or_collab(reg, current.id):
+        raise HTTPException(status_code=403, detail="Not allowed")
+
+    tmp_dir = UPLOAD_TMP / body.upload_id
+    parts = sorted([p for p in tmp_dir.glob("*.part")], key=lambda p: int(p.stem))
+    if not parts:
+        raise HTTPException(status_code=400, detail="No parts uploaded")
+
+    safe_name = f"{uuid.uuid4()}_{meta['filename'].replace('/', '_')}"
+    final_dir = UPLOAD_DIR / "registry" / meta['registry_id']
+    final_dir.mkdir(parents=True, exist_ok=True)
+    final_path = final_dir / safe_name
+
+    with open(final_path, "wb") as out:
+        for part in parts:
+            with open(part, "rb") as pf:
+                out.write(pf.read())
+
+    # cleanup tmp
+    for part in parts:
+        try:
+            part.unlink()
+        except Exception:
+            pass
+    try:
+        tmp_dir.rmdir()
+    except Exception:
+        pass
+
+    await db.uploads.update_one({"upload_id": body.upload_id}, {"$set": {"completed": True, "final_path": str(final_path)}})
+    url_path = f"/api/files/registry/{meta['registry_id']}/{safe_name}"
+    return UploadCompleteResponse(url=url_path)
 
 # Include the router in the main app
 app.include_router(api_router)
