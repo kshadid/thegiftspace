@@ -105,6 +105,10 @@ export async function adminUsers(query = "") {
   const { data } = await api.get(`/admin/users`, { params: { query } });
   return data;
 }
+export async function adminUsersLookup(idsCsv) {
+  const { data } = await api.get(`/admin/users/lookup`, { params: { ids: idsCsv } });
+  return data;
+}
 export async function adminRegistries(query = "") {
   const { data } = await api.get(`/admin/registries`, { params: { query } });
   return data;

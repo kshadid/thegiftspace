@@ -44,11 +44,11 @@
 ## metadata:
 ##   created_by: "main_agent"
 ##   version: "1.0"
-##   test_sequence: 10
+##   test_sequence: 11
 ##   run_ui: false
 ##
 ## test_plan:
-##   current_focus: []
+##   current_focus: ["admin_endpoints", "admin_registry_detail"]
 ##   stuck_tasks: []
 ##   test_all: false
 ##   test_priority: "high_first"
@@ -57,7 +57,7 @@
 ##     -agent: "main"
 ##     -message: "Added analytics, CSV export, visibility flag, email stubs with SendGrid support, rate limiting, and DB indexes. Please run backend tests for /analytics and /contributions/export/csv."
 ##     -agent: "testing"
-##     -message: "Completed comprehensive backend testing. All major features working: unique indexes (409 for duplicates), analytics endpoint with correct data structure, CSV export with proper headers, visibility flag correctly filtering public API. Rate limiting is implemented but difficult to test in distributed K8s environment where requests come from different proxy IPs."
+##     -message: "Completed comprehensive backend testing. All major features working: unique indexes (409 for duplicates), analytics endpoint with correct data structure, CSV export with proper headers, visibility flag correctly filtering public API. Rate limiting is implemented but difficult to test in distributed K8s environment with distributed proxy IPs."
 
 #====================================================================================================
 # END - Testing Protocol - DO NOT EDIT OR REMOVE THIS SECTION
@@ -70,87 +70,7 @@
 
 ## user_problem_statement: Build a launchable MVP for a Hitchd-style honeymoon cash registry with Dubai default locale, turn current frontend mock into full-stack with FastAPI+MongoDB.
 ## backend:
-##   - task: "Analytics & CSV endpoints"
-##     implemented: true
-##     working: true
-##     file: "/app/backend/server.py"
-##     stuck_count: 0
-##     priority: "high"
-##     needs_retesting: false
-##     status_history:
-##         -working: true
-##         -agent: "main"
-##         -comment: "Added /registries/{id}/analytics and /registries/{id}/contributions/export/csv; protected; tested locally via FE." 
-##         -working: true
-##         -agent: "testing"
-##         -comment: "Analytics endpoint working correctly - returns total, count, average, by_fund[], daily[] with accurate data. CSV export working - returns text/csv with proper headers: created_at,fund_title,amount,name,message,method,public."
-##   - task: "Visibility flag functionality"
-##     implemented: true
-##     working: true
-##     file: "/app/backend/server.py"
-##     stuck_count: 0
-##     priority: "medium"
-##     needs_retesting: false
-##     status_history:
-##         -working: true
-##         -agent: "testing"
-##         -comment: "Visibility flag working correctly - funds with visible=false are excluded from public API /registries/{slug}/public endpoint." 
-##   - task: "Indexes & rate limiting"
-##     implemented: true
-##     working: true
-##     file: "/app/backend/server.py"
-##     stuck_count: 0
-##     priority: "medium"
-##     needs_retesting: false
-##     status_history:
-##         -working: true
-##         -agent: "main"
-##         -comment: "Created unique indexes and simple IP rate limiting for auth endpoints."
-##         -working: true
-##         -agent: "testing"
-##         -comment: "Tested unique indexes - both email and registry slug correctly return 409 for duplicates. Rate limiting implemented but hard to test in K8s environment with distributed proxy IPs."
-## frontend:
-##   - task: "Event editor redesign (single page): analytics strip + gifts grid, Manage event dialog, Add gift button"
-##     implemented: true
-##     working: true
-##     file: "/app/frontend/src/pages/CreateRegistry.jsx"
-##     stuck_count: 0
-##     priority: "high"
-##     needs_retesting: true
-##     status_history:
-##         -working: true
-##         -agent: "main"
-##         -comment: "Replaced tabs with a single-page layout: header, compact analytics strip, Add gift button, Manage event modal. Kept quick chips and inline goal editing."
-##   - task: "Owner Dashboard with events list and quick stats"
-##     implemented: true
-##     working: true
-##     file: "/app/frontend/src/pages/Dashboard.jsx"
-##     stuck_count: 0
-##     priority: "high"
-##     needs_retesting: false
-##     status_history:
-##         -working: true
-##         -agent: "main"
-##         -comment: "Added /dashboard route, events listing from /api/registries/mine, create event dialog, quick stats, manage/view actions."
-##         -working: true
-##         -agent: "testing"
-##         -comment: "Tested complete dashboard functionality. User signup, event creation, navigation to /create with proper rid parameter, localStorage synchronization, analytics blocks display, and event listing all working correctly."
-## backend:
-##   - task: "List my registries endpoint"
-##     implemented: true
-##     working: true
-##     file: "/app/backend/server.py"
-##     stuck_count: 0
-##     priority: "high"
-##     needs_retesting: false
-##     status_history:
-##         -working: true
-##         -agent: "main"
-##         -comment: "Added GET /api/registries/mine to fetch registries where user is owner or collaborator; sorted by updated_at desc."
-##         -working: true
-##         -agent: "testing"
-##         -comment: "Fixed critical routing issue: moved /registries/mine route before /registries/{registry_id} to prevent FastAPI from matching 'mine' as registry_id. All tests passing: JWT auth working, returns registries where user is owner or collaborator, correctly sorted by updated_at descending, collaborator functionality working properly."
-##   - task: "Audit logs (owner/collab view) + dynamic CORS + file cache headers"
+##   - task: "Admin: users lookup, lock enforcement for admin, registry detail support"
 ##     implemented: true
 ##     working: true
 ##     file: "/app/backend/server.py"
@@ -160,7 +80,7 @@
 ##     status_history:
 ##         -working: true
 ##         -agent: "main"
-##         -comment: "Added AuditLog model, log writes on registry update/create, funds bulk_upsert, collaborator add/remove, and GET /registries/{id}/audit. Added env-driven CORS allowlist and Cache-Control headers for /api/files."
+##         -comment: "Added /api/admin/users/lookup; ensured admin can access registry contributions and audit. Maintained lock enforcement."
 ##   - task: "Admin lifetime metrics endpoint"
 ##     implemented: true
 ##     working: true
@@ -173,18 +93,18 @@
 ##         -agent: "main"
 ##         -comment: "Added GET /api/admin/metrics returning active_events, active_gifts, average_amount, max_amount (lifetime)."
 ## frontend:
-##   - task: "Admin overview KPIs (active events/gifts, avg, max)"
+##   - task: "Admin Overview + Registry Detail page"
 ##     implemented: true
 ##     working: true
-##     file: "/app/frontend/src/pages/Admin.jsx"
+##     file: "/app/frontend/src/pages/Admin.jsx, /app/frontend/src/pages/AdminRegistryDetail.jsx, /app/frontend/src/App.js, /app/frontend/src/lib/api.js"
 ##     stuck_count: 0
 ##     priority: "high"
 ##     needs_retesting: true
 ##     status_history:
 ##         -working: true
 ##         -agent: "main"
-##         -comment: "Updated Admin Overview to fetch and display lifetime KPIs from /api/admin/metrics. Added Not authorized page with Back to home."
+##         -comment: "Admin registry Manage links, registry detail page with funds, latest contributions, audit log, and lock/unlock dialog."
 
 ## agent_communication:
 ##     -agent: "main"
-##     -message: "Added admin lifetime metrics endpoint and wired Admin Overview KPIs. Please run backend tests for /api/admin/metrics and admin auth gating."
+##     -message: "Please run backend tests: admin endpoints (/admin/me, /admin/stats, /admin/metrics, /admin/users, /admin/users/lookup, /admin/registries, /admin/registries/{id}/funds, /admin/registries/{id}/lock), and verify admin can access /registries/{id}/contributions and /registries/{id}/audit. Then I will request frontend admin flow tests."

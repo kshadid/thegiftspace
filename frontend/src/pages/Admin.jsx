@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { adminMe, adminStats, adminMetrics, adminUsers, adminRegistries, adminSetRegistryLock } from "../lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -91,6 +91,7 @@ export default function AdminPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Link className="underline text-xs" to={`/r/${r.slug}`}>Public</Link>
+                        <Link className="underline text-xs" to={`/admin/r/${r.id}`}>Manage</Link>
                         <LockButton r={r} onOpen={(reg) => { setLockReg(reg); setLockReason(reg.lock_reason || ""); setLockOpen(true); }} />
                       </div>
                     </div>
@@ -137,6 +138,7 @@ export default function AdminPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Link className="underline text-xs" to={`/r/${r.slug}`}>Public</Link>
+                        <Link className="underline text-xs" to={`/admin/r/${r.id}`}>Manage</Link>
                         <LockButton r={r} onOpen={(reg) => { setLockReg(reg); setLockReason(reg.lock_reason || ""); setLockOpen(true); }} />
                       </div>
                     </div>

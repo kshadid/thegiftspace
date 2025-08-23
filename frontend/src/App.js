@@ -8,6 +8,7 @@ import PublicRegistry from "./pages/PublicRegistry";
 import AuthPage from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import AdminPage from "./pages/Admin";
+import AdminRegistryDetail from "./pages/AdminRegistryDetail";
 import { Toaster } from "./components/ui/toaster";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
@@ -36,6 +37,7 @@ function App() {
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
             <Route path="/admin" element={<Protected><AdminPage /></Protected>} />
+            <Route path="/admin/r/:id" element={<Protected><AdminRegistryDetail /></Protected>} />
             <Route path="/create" element={<Protected><CreateRegistry /></Protected>} />
             <Route path="/r/:slug" element={<PublicRegistry />} />
             <Route path="*" element={<NotFound />} />
