@@ -13,6 +13,13 @@ import { useToast } from "../hooks/use-toast";
 import { getPublicRegistry, createContribution } from "../lib/api";
 import { loadRegistry as loadLocalRegistry, loadFunds as loadLocalFunds, sumForFund as sumLocal, totalReceived as totalLocal } from "../mock/mock";
 
+const themeClasses = {
+  modern: { overlay: "bg-black/40", title: "text-white", subtle: "text-white/90" },
+  serif: { overlay: "bg-black/30", title: "text-white", subtle: "text-white/85" },
+  pastel: { overlay: "bg-rose-900/20", title: "text-white", subtle: "text-white/90" },
+  dark: { overlay: "bg-black/60", title: "text-white", subtle: "text-white/80" },
+};
+
 export default function PublicRegistry() {
   const { slug } = useParams();
   const [registry, setRegistry] = React.useState(loadLocalRegistry());
@@ -29,6 +36,7 @@ export default function PublicRegistry() {
           currency: data.registry.currency,
           heroImage: data.registry.hero_image,
           slug: data.registry.slug,
+          theme: data.registry.theme || "modern",
         });
         setFunds(
           data.funds.map((f) => ({
@@ -42,7 +50,6 @@ export default function PublicRegistry() {
             progress: f.progress,
           }))
         );
-        // SEO meta tags
         document.title = `${data.registry.couple_names} · Wedding Registry`;
         const desc = `${data.registry.couple_names} · ${data.registry.event_date} — ${data.registry.location}`;
         setMetaTag("description", desc);
@@ -55,6 +62,7 @@ export default function PublicRegistry() {
     fetchData();
   }, [slug]);
 
+  const theme = themeClasses[registry.theme || "modern"];
   const receivedAll = funds.every((f) => typeof f.raised === "number")
     ? funds.reduce((acc, f) => acc + (f.raised || 0), 0)
     : totalLocal();
@@ -63,16 +71,16 @@ export default function PublicRegistry() {
     <div className="min-h-screen">
       <div className="relative">
         <img src={registry.heroImage} alt="Hero" className="w-full h-[360px] object-cover" />
-        <div className="absolute inset-0 bg-black/40" />
+        <div className={`absolute inset-0 ${theme.overlay}`} />
         <div className="absolute inset-0 flex items-end">
           <div className="max-w-6xl mx-auto px-4 pb-6 w-full flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div>
-              <h1 className="text-white text-3xl md:text-4xl font-semibold">{registry.coupleNames}</h1>
-              <p className="text-white/90">{registry.eventDate} — {registry.location}</p>
+              <h1 className={`${theme.title} text-3xl md:text-4xl font-semibold`}>{registry.coupleNames}</h1>
+              <p className={`${theme.subtle}`}>{registry.eventDate} — {registry.location}</p>
             </div>
             <div className="text-right">
-              <div className="text-white text-sm">Raised</div>
-              <div className="text-white text-2xl font-semibold">{formatCurrency(receivedAll, registry.currency)}</div>
+              <div className={`${theme.subtle} text-sm`}>Raised</div>
+              <div className={`${theme.title} text-2xl font-semibold`}>{formatCurrency(receivedAll, registry.currency)}</div>
             </div>
           </div>
         </div>
@@ -188,13 +196,7 @@ function ContributionDialog({ fund, currency, onComplete }) {
             <Label className="text-xs">Amount ({currency})</Label>
             <div className="mt-1 grid grid-cols-4 gap-2">
               {quick.map((q) => (
-                <button
-                  key={q}
-                  onClick={() => setAmount(q)}
-                  className={`text-sm rounded-md border px-3 py-2 hover:bg-muted ${amount === q ? "bg-muted" : ""}`}
-                >
-                  {q}
-                </button>
+                <button key={q} onClick={() => setAmount(q)} className={`text-sm rounded-md border px-3 py-2 hover:bg-muted ${amount === q ? "bg-muted" : ""}`}>{q}</button>
               ))}
             </div>
             <Input className="mt-2" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
@@ -216,12 +218,7 @@ function ContributionDialog({ fund, currency, onComplete }) {
           <div>
             <Label className="text-xs mb-2 block">Payment method (mock)</Label>
             <RadioGroup value={method} onValueChange={setMethod} className="grid grid-cols-2 gap-2">
-              {[
-                { id: "card", label: "Credit/Debit Card" },
-                { id: "paypal", label: "PayPal" },
-                { id: "revolut", label: "Revolut" },
-                { id: "bank", label: "Bank Transfer" },
-              ].map((m) => (
+              {[{ id: "card", label: "Credit/Debit Card" }, { id: "paypal", label: "PayPal" }, { id: "revolut", label: "Revolut" }, { id: "bank", label: "Bank Transfer" }].map((m) => (
                 <div key={m.id} className="flex items-center space-x-2 rounded-md border p-2">
                   <RadioGroupItem id={m.id} value={m.id} />
                   <Label htmlFor={m.id}>{m.label}</Label>

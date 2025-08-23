@@ -1,52 +1,42 @@
-# API Contracts – Cash Registry (Hitchd-style)
+# API Contracts – Cash Registry (Updated)
 
-Scope
-- Minimal productizable backend for honeymoon cash registry with public registry pages and contributions.
-- All routes are prefixed with /api per ingress rules.
-- DB: MongoDB (use MONGO_URL and DB_NAME from backend/.env). IDs are UUID strings, not ObjectIds.
-
-Core Entities
+Entities
 - User: id, name, email, password_hash, created_at
-- Registry: id, owner_id, couple_names, event_date (YYYY-MM-DD), location, currency, hero_image, slug, created_at, updated_at
-- Fund: id, registry_id, title, description, goal, cover_url, category, created_at, updated_at
-- Contribution: id, fund_id, name, amount, message, public, method, created_at
+- Registry: id, owner_id, collaborators: string[], couple_names, event_date (YYYY-MM-DD), location, currency, hero_image, slug, theme, created_at, updated_at
+- Fund: id, registry_id, title, description, goal, cover_url, category, visible, order, created_at, updated_at
+- Contribution: id, fund_id, name, amount, message, public, method, guest_email, created_at
 
-Public Responses
-- PublicRegistryResponse { registry: Registry, funds: Array<Fund & { raised:number, progress:number }>, totals: { raised:number } }
+Auth
+- POST /api/auth/register {name,email,password} -> {access_token, token_type, user}
+- POST /api/auth/login {email,password} -> {access_token, token_type, user}
+- GET /api/auth/me -> user
 
-Auth Endpoints
-- POST /api/auth/register
-  - body: { name, email, password }
-  - 201 -> { access_token, token_type: "bearer", user: { id, name, email } }
-- POST /api/auth/login
-  - body: { email, password }
-  - 200 -> { access_token, token_type: "bearer", user }
-- GET /api/auth/me
-  - 200 -> user
-
-Registry & Funds (auth required)
-- POST /api/registries
-  - body: { couple_names, event_date, location, currency, hero_image, slug }
-  - 201 -> Registry (owner_id = current user)
-- PUT /api/registries/{registry_id}
-  - body: partial registry
-  - 200 -> Registry (owner only)
-- POST /api/registries/{registry_id}/funds/bulk_upsert
-  - body: { funds: Array<{ id?:string, title, description, goal, cover_url, category }> }
-  - 200 -> { updated: number, created: number }
-- GET /api/registries/{registry_id}/funds
-  - 200 -> Fund[] (owner only)
-
-Public
+Registries (auth: owner or collaborator unless public)
+- POST /api/registries {couple_names,event_date,location,currency,hero_image,slug,theme} -> Registry (owner_id=current)
+- PUT /api/registries/{registry_id} partial -> Registry
+- GET /api/registries/{registry_id} -> Registry (owner/collaborator)
 - GET /api/registries/{slug}/public -> PublicRegistryResponse
-- POST /api/contributions -> Contribution (no auth)
-- GET /api/funds/{fund_id}/contributions -> Contribution[] (owner only)
 
-Frontend Integration Plan
-- Add AuthContext to store token+user in localStorage; axios interceptor adds Authorization header.
-- Create page /auth for login/register; gate /create by redirecting unauthenticated users.
-- CreateRegistry: Save to backend when token present; otherwise redirect to /auth.
-- PublicRegistry: read via GET /registries/:slug/public; Contribute posts to /contributions.
+Funds (auth: owner/collaborator)
+- POST /api/registries/{registry_id}/funds/bulk_upsert {funds:[{id?,title,description,goal,cover_url,category,visible,order?}]} -> {created,updated}
+- GET /api/registries/{registry_id}/funds -> Fund[] (sorted by order asc)
 
-Data Initially Mocked (to replace)
-- Registry/funds/contributions in src/mock/mock.js (used only as fallback during API outages).
+Contributions (public)
+- POST /api/contributions {fund_id,name,amount,message,public,method,guest_email?} -> Contribution
+- GET /api/funds/{fund_id}/contributions -> Contribution[] (owner/collaborator)
+
+Analytics & Export (auth: owner/collaborator)
+- GET /api/registries/{registry_id}/analytics -> { total, count, average, by_fund:[{fund_id,title,sum,count}], daily:[{date,sum}] }
+- GET /api/registries/{registry_id}/contributions/export/csv -> CSV
+
+Collaborators (auth: owner only)
+- POST /api/registries/{registry_id}/collaborators {email}
+- DELETE /api/registries/{registry_id}/collaborators/{user_id}
+
+Frontend Integration
+- CreateRegistry: tabs: Gifts (drag reorder), Add Gift, Analytics, Settings (theme preset, collaborators add/remove). Save triggers registry update + bulk upsert (order persisted). Export CSV button.
+- PublicRegistry: applies theme preset to hero overlay/text, sorts funds by order.
+
+Notes
+- Payments remain mocked. Emails deferred.
+- All routes prefixed /api; backend on 0.0.0.0:8001; frontend uses REACT_APP_BACKEND_URL; DB uses MONGO_URL.

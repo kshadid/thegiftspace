@@ -31,7 +31,7 @@ JWT_EXPIRE_MINUTES = int(os.environ.get('JWT_EXPIRE_MINUTES', '1440'))  # 24h de
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Email settings (SendGrid optional)
+# Email settings (stubbed for now)
 SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
 SENDGRID_FROM = os.environ.get('SENDGRID_FROM', 'no-reply@example.com')
 
@@ -43,27 +43,21 @@ api_router = APIRouter(prefix="/api")
 
 # ===== Utilities =====
 async def ensure_indexes():
-    # Users: unique email
     await db.users.create_index('email', unique=True)
-    # Registries: unique slug, owner index
     await db.registries.create_index('slug', unique=True)
     await db.registries.create_index('owner_id')
-    # Funds: by registry
     await db.funds.create_index('registry_id')
-    # Contributions: by fund and created_at
+    await db.funds.create_index('updated_at')
     await db.contributions.create_index('fund_id')
     await db.contributions.create_index('created_at')
 
-# Simple IP rate limiter storage
 _rate_store: Dict[str, List[float]] = {}
 
 async def rate_limit(req: Request, key: str, limit: int, window_sec: int = 60):
-    # Key by path + ip
     ip = req.headers.get('x-forwarded-for', req.client.host if req.client else 'unknown')
     k = f"{key}:{ip}"
     now = datetime.now().timestamp()
     lst = _rate_store.get(k, [])
-    # prune
     lst = [t for t in lst if now - t < window_sec]
     if len(lst) >= limit:
         raise HTTPException(status_code=429, detail="Too many requests, please try again later")
@@ -113,10 +107,12 @@ class RegistryCreate(BaseModel):
     currency: Currency = "AED"
     hero_image: Optional[str] = None
     slug: Slug
+    theme: Optional[str] = "modern"  # modern | serif | pastel | dark
 
 class Registry(RegistryCreate):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     owner_id: str
+    collaborators: List[str] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -127,6 +123,7 @@ class RegistryUpdate(BaseModel):
     currency: Optional[Currency] = None
     hero_image: Optional[str] = None
     slug: Optional[Slug] = None
+    theme: Optional[str] = None
 
 class FundIn(BaseModel):
     id: Optional[str] = None
@@ -136,6 +133,7 @@ class FundIn(BaseModel):
     cover_url: Optional[str] = None
     category: Optional[str] = None
     visible: bool = True
+    order: Optional[int] = None
 
 class Fund(FundIn):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -198,29 +196,14 @@ async def get_user_from_token(authorization: Optional[str] = Header(None)) -> Us
     user_doc.pop("password_hash", None)
     return UserPublic(**user_doc)
 
-# ===== Email helper =====
+# Authorization helper
+def is_owner_or_collab(reg: dict, user_id: str) -> bool:
+    return reg.get("owner_id") == user_id or user_id in (reg.get("collaborators") or [])
+
+# ===== Email helper (mocked) =====
 async def send_email_async(to_email: str, subject: str, html: str):
-    if not SENDGRID_API_KEY:
-        logging.info(f"Email (mocked): to={to_email} subject={subject}")
-        return
-    import requests
-    url = "https://api.sendgrid.com/v3/mail/send"
-    headers = {
-        "Authorization": f"Bearer {SENDGRID_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    data = {
-        "personalizations": [{"to": [{"email": to_email}]}],
-        "from": {"email": SENDGRID_FROM},
-        "subject": subject,
-        "content": [{"type": "text/html", "value": html}],
-    }
-    try:
-        r = requests.post(url, json=data, headers=headers, timeout=10)
-        if r.status_code >= 300:
-            logging.warning(f"SendGrid error {r.status_code}: {r.text}")
-    except Exception as e:
-        logging.warning(f"SendGrid exception: {e}")
+    # Emails are deferred per user request; keep stub for later activation
+    logging.info(f"Email (deferred): to={to_email} subject={subject}")
 
 # ===== Routes =====
 @api_router.get("/")
@@ -285,12 +268,22 @@ async def update_registry(registry_id: str, patch: RegistryUpdate, current: User
     reg = await db.registries.find_one({"id": registry_id})
     if not reg:
         raise HTTPException(status_code=404, detail="Registry not found")
-    if reg.get("owner_id") != current.id:
+    if not is_owner_or_collab(reg, current.id):
         raise HTTPException(status_code=403, detail="Not allowed")
     update_doc = {k: v for k, v in patch.model_dump().items() if v is not None}
     update_doc["updated_at"] = datetime.utcnow()
     await db.registries.update_one({"id": registry_id}, {"$set": update_doc})
     reg.update(update_doc)
+    reg.pop("_id", None)
+    return Registry(**reg)
+
+@api_router.get("/registries/{registry_id}", response_model=Registry)
+async def get_registry(registry_id: str, current: UserPublic = Depends(get_user_from_token)):
+    reg = await db.registries.find_one({"id": registry_id})
+    if not reg:
+        raise HTTPException(status_code=404, detail="Registry not found")
+    if not is_owner_or_collab(reg, current.id):
+        raise HTTPException(status_code=403, detail="Not allowed")
     reg.pop("_id", None)
     return Registry(**reg)
 
@@ -300,7 +293,7 @@ async def get_registry_public(slug: str):
     if not reg_doc:
         raise HTTPException(status_code=404, detail="Registry not found")
 
-    funds = await db.funds.find({"registry_id": reg_doc["id"], "visible": True}).to_list(1000)
+    funds = await db.funds.find({"registry_id": reg_doc["id"], "visible": True}).sort("order", 1).to_list(1000)
 
     response_funds: List[Dict[str, Any]] = []
     total_raised = 0.0
@@ -331,15 +324,17 @@ async def bulk_upsert_funds(registry_id: str, body: Dict[str, List[FundIn]], cur
     reg = await db.registries.find_one({"id": registry_id})
     if not reg:
         raise HTTPException(status_code=404, detail="Registry not found")
-    if reg.get("owner_id") != current.id:
+    if not is_owner_or_collab(reg, current.id):
         raise HTTPException(status_code=403, detail="Not allowed")
 
     funds_in = body.get("funds", [])
     created = 0
     updated = 0
-    for f in funds_in:
+    for idx, f in enumerate(funds_in):
         data = f.model_dump()
         now = datetime.utcnow()
+        if data.get("order") is None:
+            data["order"] = idx
         if not data.get("id"):
             data["id"] = str(uuid.uuid4())
         existing = await db.funds.find_one({"id": data["id"]})
@@ -358,9 +353,9 @@ async def list_funds(registry_id: str, current: UserPublic = Depends(get_user_fr
     reg = await db.registries.find_one({"id": registry_id})
     if not reg:
         raise HTTPException(status_code=404, detail="Registry not found")
-    if reg.get("owner_id") != current.id:
+    if not is_owner_or_collab(reg, current.id):
         raise HTTPException(status_code=403, detail="Not allowed")
-    items = await db.funds.find({"registry_id": registry_id}).to_list(1000)
+    items = await db.funds.find({"registry_id": registry_id}).sort("order", 1).to_list(1000)
     return [Fund(**{k: v for k, v in it.items() if k != "_id"}) for it in items]
 
 # --- Contributions ---
@@ -372,16 +367,10 @@ async def create_contribution(payload: ContributionIn):
     contrib = Contribution(**payload.model_dump())
     await db.contributions.insert_one(contrib.model_dump())
 
-    # Fire-and-forget emails
+    # Email deferred (stub)
     try:
-        # Thank-you email to guest (if provided)
-        if contrib.guest_email:
-            asyncio.create_task(send_email_async(contrib.guest_email, "Thank you for your gift", f"<p>Thank you for contributing {contrib.amount} towards {fund.get('title')}.</p>"))
-        # Notify registry owner
-        reg = await db.registries.find_one({"id": fund.get("registry_id")})
-        owner = await db.users.find_one({"id": reg.get("owner_id")}) if reg else None
-        if owner and owner.get('email'):
-            asyncio.create_task(send_email_async(owner['email'], "New contribution received", f"<p>{contrib.name or 'Guest'} contributed {contrib.amount} to {fund.get('title')}.</p>"))
+        if False and SENDGRID_API_KEY:  # disabled per user request
+            pass
     except Exception as e:
         logging.warning(f"Email dispatch error: {e}")
 
@@ -393,7 +382,7 @@ async def list_contributions(fund_id: str, current: Optional[UserPublic] = Depen
     if not fund:
         raise HTTPException(status_code=404, detail="Fund not found")
     reg = await db.registries.find_one({"id": fund.get("registry_id")})
-    if not reg or (current and reg.get("owner_id") != current.id):
+    if not reg or not is_owner_or_collab(reg, current.id):
         raise HTTPException(status_code=403, detail="Not allowed")
     items = await db.contributions.find({"fund_id": fund_id}).to_list(1000)
     return [Contribution(**it) for it in items]
@@ -404,7 +393,7 @@ async def list_registry_contributions(registry_id: str, current: UserPublic = De
     reg = await db.registries.find_one({"id": registry_id})
     if not reg:
         raise HTTPException(status_code=404, detail="Registry not found")
-    if reg.get("owner_id") != current.id:
+    if not is_owner_or_collab(reg, current.id):
         raise HTTPException(status_code=403, detail="Not allowed")
     fund_ids = [f["id"] for f in await db.funds.find({"registry_id": registry_id}).to_list(1000)]
     items = await db.contributions.find({"fund_id": {"$in": fund_ids}}).to_list(5000)
@@ -415,7 +404,7 @@ async def export_registry_contributions_csv(registry_id: str, current: UserPubli
     reg = await db.registries.find_one({"id": registry_id})
     if not reg:
         raise HTTPException(status_code=404, detail="Registry not found")
-    if reg.get("owner_id") != current.id:
+    if not is_owner_or_collab(reg, current.id):
         raise HTTPException(status_code=403, detail="Not allowed")
 
     fund_map: Dict[str, str] = {}
@@ -449,7 +438,7 @@ async def registry_analytics(registry_id: str, current: UserPublic = Depends(get
     reg = await db.registries.find_one({"id": registry_id})
     if not reg:
         raise HTTPException(status_code=404, detail="Registry not found")
-    if reg.get("owner_id") != current.id:
+    if not is_owner_or_collab(reg, current.id):
         raise HTTPException(status_code=403, detail="Not allowed")
 
     funds = await db.funds.find({"registry_id": registry_id}).to_list(1000)
@@ -465,7 +454,6 @@ async def registry_analytics(registry_id: str, current: UserPublic = Depends(get
     count = int(summary[0]['count']) if summary else 0
     avg = (total / count) if count else 0.0
 
-    # By fund
     by_fund_pipeline = [
         {"$match": {"fund_id": {"$in": fund_ids}}},
         {"$group": {"_id": "$fund_id", "sum": {"$sum": "$amount"}, "count": {"$sum": 1}}},
@@ -477,7 +465,6 @@ async def registry_analytics(registry_id: str, current: UserPublic = Depends(get
         for x in by_fund_raw
     ]
 
-    # Daily series last 30 days
     since = datetime.utcnow() - timedelta(days=30)
     daily_pipeline = [
         {"$match": {"fund_id": {"$in": fund_ids}, "created_at": {"$gte": since}}},
@@ -488,6 +475,40 @@ async def registry_analytics(registry_id: str, current: UserPublic = Depends(get
     daily = [{"date": x['_id'], "sum": float(x['sum'])} for x in daily_raw]
 
     return {"total": total, "count": count, "average": avg, "by_fund": by_fund, "daily": daily}
+
+# --- Collaborators ---
+class CollaboratorAdd(BaseModel):
+    email: EmailStr
+
+@api_router.post("/registries/{registry_id}/collaborators")
+async def add_collaborator(registry_id: str, body: CollaboratorAdd, current: UserPublic = Depends(get_user_from_token)):
+    reg = await db.registries.find_one({"id": registry_id})
+    if not reg:
+        raise HTTPException(status_code=404, detail="Registry not found")
+    if reg.get("owner_id") != current.id:
+        raise HTTPException(status_code=403, detail="Only owner can add collaborators")
+    user = await find_user_by_email(body.email.lower())
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user['id'] == reg['owner_id']:
+        raise HTTPException(status_code=400, detail="Owner already has access")
+    collabs = set(reg.get('collaborators') or [])
+    collabs.add(user['id'])
+    await db.registries.update_one({"id": registry_id}, {"$set": {"collaborators": list(collabs), "updated_at": datetime.utcnow()}})
+    return {"ok": True}
+
+@api_router.delete("/registries/{registry_id}/collaborators/{user_id}")
+async def remove_collaborator(registry_id: str, user_id: str, current: UserPublic = Depends(get_user_from_token)):
+    reg = await db.registries.find_one({"id": registry_id})
+    if not reg:
+        raise HTTPException(status_code=404, detail="Registry not found")
+    if reg.get("owner_id") != current.id:
+        raise HTTPException(status_code=403, detail="Only owner can remove collaborators")
+    collabs = set(reg.get('collaborators') or [])
+    if user_id in collabs:
+        collabs.remove(user_id)
+        await db.registries.update_one({"id": registry_id}, {"$set": {"collaborators": list(collabs), "updated_at": datetime.utcnow()}})
+    return {"ok": True}
 
 # Include the router in the main app
 app.include_router(api_router)
@@ -500,7 +521,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'

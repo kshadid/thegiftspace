@@ -16,8 +16,8 @@ import {
   saveFunds,
   DEFAULT_CURRENCY,
 } from "../mock/mock";
-import { Plus, Trash2, Eye, ArrowDownToLine } from "lucide-react";
-import { createRegistry as apiCreateRegistry, updateRegistry as apiUpdateRegistry, bulkUpsertFunds, getRegistryAnalytics, exportRegistryCSV } from "../lib/api";
+import { Plus, Trash2, Eye, ArrowDownToLine, GripVertical, UserPlus, X } from "lucide-react";
+import { createRegistry as apiCreateRegistry, updateRegistry as apiUpdateRegistry, bulkUpsertFunds, getRegistryAnalytics, exportRegistryCSV, getRegistryById, addCollaborator, removeCollaborator } from "../lib/api";
 
 export default function CreateRegistry() {
   const navigate = useNavigate();
@@ -27,11 +27,15 @@ export default function CreateRegistry() {
   const [publishing, setPublishing] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState("list");
   const [analytics, setAnalytics] = React.useState(null);
+  const [collaborators, setCollaborators] = React.useState([]);
+  const [collabEmail, setCollabEmail] = React.useState("");
+  const dragId = React.useRef(null);
 
   const updateRegistry = (patch) => setRegistry((r) => ({ ...r, ...patch }));
 
   const addFund = () => {
     const id = `fund_${Date.now()}`;
+    const nextOrder = funds.length;
     setFunds((f) => [
       ...f,
       {
@@ -43,11 +47,27 @@ export default function CreateRegistry() {
           "https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=1200&auto=format&fit=crop",
         category: "Experience",
         visible: true,
+        order: nextOrder,
       },
     ]);
   };
 
-  const removeFund = (id) => setFunds((f) => f.filter((x) => x.id !== id));
+  const removeFund = (id) => setFunds((f) => f.filter((x) => x.id !== id).map((x, i) => ({ ...x, order: i })));
+
+  const onDragStart = (id) => (e) => {
+    dragId.current = id;
+    e.dataTransfer.effectAllowed = "move";
+  };
+  const onDragOver = (id) => (e) => {
+    e.preventDefault();
+    const from = funds.findIndex((x) => x.id === dragId.current);
+    const to = funds.findIndex((x) => x.id === id);
+    if (from === -1 || to === -1 || from === to) return;
+    const clone = [...funds];
+    const [moved] = clone.splice(from, 1);
+    clone.splice(to, 0, moved);
+    setFunds(clone.map((x, i) => ({ ...x, order: i })));
+  };
 
   const saveAllLocal = () => {
     saveRegistry(registry);
@@ -67,6 +87,7 @@ export default function CreateRegistry() {
           currency: registry.currency || DEFAULT_CURRENCY,
           hero_image: registry.heroImage,
           slug: (registry.slug || "amir-leila").toLowerCase(),
+          theme: registry.theme || "modern",
         });
         regId = created.id;
         localStorage.setItem("registry_id", regId);
@@ -79,9 +100,10 @@ export default function CreateRegistry() {
           currency: registry.currency || DEFAULT_CURRENCY,
           hero_image: registry.heroImage,
           slug: registry.slug,
+          theme: registry.theme || "modern",
         });
       }
-      const payloadFunds = (funds || []).map((f, idx) => ({
+      const payloadFunds = (funds || []).map((f) => ({
         id: f.id,
         title: f.title,
         description: f.description,
@@ -89,6 +111,7 @@ export default function CreateRegistry() {
         cover_url: f.coverUrl,
         category: f.category,
         visible: f.visible !== false,
+        order: typeof f.order === "number" ? f.order : 0,
       }));
       await bulkUpsertFunds(regId, payloadFunds);
       return true;
@@ -116,10 +139,7 @@ export default function CreateRegistry() {
 
   const exportCsv = async () => {
     const regId = getRegId();
-    if (!regId) {
-      toast({ title: "Create registry first", description: "Please save your registry to enable exports." });
-      return;
-    }
+    if (!regId) return toast({ title: "Create registry first", description: "Please save your registry to enable exports." });
     try {
       const blob = await exportRegistryCSV(regId);
       const url = window.URL.createObjectURL(blob);
@@ -138,11 +158,41 @@ export default function CreateRegistry() {
   React.useEffect(() => {
     const regId = getRegId();
     if (activeTab === "analytics" && regId) {
-      getRegistryAnalytics(regId)
-        .then(setAnalytics)
-        .catch(() => setAnalytics(null));
+      getRegistryAnalytics(regId).then(setAnalytics).catch(() => setAnalytics(null));
+    }
+    if (activeTab === "settings" && regId) {
+      getRegistryById(regId)
+        .then((r) => {
+          setRegistry((cur) => ({ ...cur, theme: r.theme || cur.theme }));
+          setCollaborators(r.collaborators || []);
+        })
+        .catch(() => setCollaborators([]));
     }
   }, [activeTab]);
+
+  const addCollab = async () => {
+    const regId = getRegId();
+    if (!regId || !collabEmail) return;
+    try {
+      await addCollaborator(regId, collabEmail);
+      setCollabEmail("");
+      setActiveTab("settings");
+      toast({ title: "Collaborator added" });
+    } catch (e) {
+      toast({ title: "Failed to add", description: e?.response?.data?.detail || e?.message });
+    }
+  };
+
+  const removeCollab = async (userId) => {
+    const regId = getRegId();
+    try {
+      await removeCollaborator(regId, userId);
+      setCollaborators((list) => list.filter((id) => id !== userId));
+      toast({ title: "Removed" });
+    } catch (e) {
+      toast({ title: "Failed to remove", description: e?.response?.data?.detail || e?.message });
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -157,10 +207,11 @@ export default function CreateRegistry() {
 
       <div className="max-w-6xl mx-auto px-4 pb-16">
         <Tabs defaultValue="list" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
+          <TabsList className="flex flex-wrap">
             <TabsTrigger value="list">Gifts</TabsTrigger>
             <TabsTrigger value="add">Add Gift</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
           <TabsContent value="list" className="mt-4">
@@ -172,59 +223,32 @@ export default function CreateRegistry() {
                 <CardContent className="grid md:grid-cols-2 gap-4">
                   <div>
                     <Label>Couple names</Label>
-                    <Input
-                      value={registry.coupleNames}
-                      onChange={(e) => updateRegistry({ coupleNames: e.target.value })}
-                      placeholder="Amir & Leila"
-                    />
+                    <Input value={registry.coupleNames} onChange={(e) => updateRegistry({ coupleNames: e.target.value })} placeholder="Amir & Leila" />
                   </div>
                   <div>
                     <Label>Wedding date</Label>
-                    <Input
-                      type="date"
-                      value={registry.eventDate}
-                      onChange={(e) => updateRegistry({ eventDate: e.target.value })}
-                    />
+                    <Input type="date" value={registry.eventDate} onChange={(e) => updateRegistry({ eventDate: e.target.value })} />
                   </div>
                   <div>
                     <Label>Location</Label>
-                    <Input
-                      value={registry.location}
-                      onChange={(e) => updateRegistry({ location: e.target.value })}
-                      placeholder="Dubai, UAE"
-                    />
+                    <Input value={registry.location} onChange={(e) => updateRegistry({ location: e.target.value })} placeholder="Dubai, UAE" />
                   </div>
                   <div>
                     <Label>Public URL slug</Label>
-                    <Input
-                      value={registry.slug}
-                      onChange={(e) => updateRegistry({ slug: e.target.value.replace(/\s+/g, "-").toLowerCase() })}
-                      placeholder="amir-leila"
-                    />
+                    <Input value={registry.slug} onChange={(e) => updateRegistry({ slug: e.target.value.replace(/\s+/g, "-").toLowerCase() })} placeholder="amir-leila" />
                   </div>
                   <div>
                     <Label>Currency</Label>
-                    <Select
-                      value={registry.currency || DEFAULT_CURRENCY}
-                      onValueChange={(v) => updateRegistry({ currency: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Currency" />
-                      </SelectTrigger>
+                    <Select value={registry.currency || DEFAULT_CURRENCY} onValueChange={(v) => updateRegistry({ currency: v })}>
+                      <SelectTrigger><SelectValue placeholder="Currency" /></SelectTrigger>
                       <SelectContent>
-                        {["AED", "USD", "EUR", "GBP", "SAR", "QAR"].map((c) => (
-                          <SelectItem key={c} value={c}>{c}</SelectItem>
-                        ))}
+                        {["AED", "USD", "EUR", "GBP", "SAR", "QAR"].map((c) => (<SelectItem key={c} value={c}>{c}</SelectItem>))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="md:col-span-2">
                     <Label>Hero image URL</Label>
-                    <Input
-                      value={registry.heroImage}
-                      onChange={(e) => updateRegistry({ heroImage: e.target.value })}
-                      placeholder="https://…"
-                    />
+                    <Input value={registry.heroImage} onChange={(e) => updateRegistry({ heroImage: e.target.value })} placeholder="https://…" />
                   </div>
                 </CardContent>
               </Card>
@@ -250,61 +274,48 @@ export default function CreateRegistry() {
 
             <div className="mt-8 grid md:grid-cols-3 gap-4">
               {funds.map((f) => (
-                <Card key={f.id}>
-                  <CardContent className="p-0">
-                    <img src={f.coverUrl} alt={f.title} className="w-full h-32 object-cover rounded-t-lg" />
-                    <div className="p-4 space-y-3">
-                      <div>
-                        <Label className="text-xs">Title</Label>
-                        <Input
-                          value={f.title}
-                          onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, title: e.target.value } : x)))}
-                        />
+                <div key={f.id} draggable onDragStart={onDragStart(f.id)} onDragOver={onDragOver(f.id)}>
+                  <Card>
+                    <CardContent className="p-0">
+                      <div className="relative">
+                        <img src={f.coverUrl} alt={f.title} className="w-full h-32 object-cover rounded-t-lg" />
+                        <div className="absolute top-2 left-2 text-xs bg-black/50 text-white px-2 py-1 rounded flex items-center gap-1"><GripVertical className="size-3"/>Drag</div>
                       </div>
-                      <div>
-                        <Label className="text-xs">Description</Label>
-                        <Textarea
-                          value={f.description}
-                          onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, description: e.target.value } : x)))}
-                        />
-                      </div>
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="col-span-1">
-                          <Label className="text-xs">Goal ({registry.currency || DEFAULT_CURRENCY})</Label>
-                          <Input
-                            type="number"
-                            value={f.goal}
-                            onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, goal: Number(e.target.value || 0) } : x)))}
-                          />
+                      <div className="p-4 space-y-3">
+                        <div>
+                          <Label className="text-xs">Title</Label>
+                          <Input value={f.title} onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, title: e.target.value } : x)))} />
                         </div>
-                        <div className="col-span-1">
-                          <Label className="text-xs">Category</Label>
-                          <Input
-                            value={f.category}
-                            onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, category: e.target.value } : x)))}
-                          />
+                        <div>
+                          <Label className="text-xs">Description</Label>
+                          <Textarea value={f.description} onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, description: e.target.value } : x)))} />
                         </div>
-                        <div className="col-span-1 flex items-center gap-2 mt-6">
-                          <Switch id={`vis-${f.id}`} checked={f.visible !== false} onCheckedChange={(v) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, visible: !!v } : x)))} />
-                          <Label htmlFor={`vis-${f.id}`}>Visible</Label>
+                        <div className="grid grid-cols-3 gap-3">
+                          <div>
+                            <Label className="text-xs">Goal ({registry.currency || DEFAULT_CURRENCY})</Label>
+                            <Input type="number" value={f.goal} onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, goal: Number(e.target.value || 0) } : x)))} />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Category</Label>
+                            <Input value={f.category} onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, category: e.target.value } : x)))} />
+                          </div>
+                          <div className="flex items-center gap-2 mt-6">
+                            <Switch id={`vis-${f.id}`} checked={f.visible !== false} onCheckedChange={(v) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, visible: !!v } : x)))} />
+                            <Label htmlFor={`vis-${f.id}`}>Visible</Label>
+                          </div>
+                        </div>
+                        <div>
+                          <Label className="text-xs">Image URL</Label>
+                          <Input value={f.coverUrl} onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, coverUrl: e.target.value } : x)))} />
+                        </div>
+                        <div className="flex items-center justify-between pt-2">
+                          <Button variant="destructive" size="icon" onClick={() => removeFund(f.id)}><Trash2 className="size-4" /></Button>
+                          <div className="text-xs text-muted-foreground">Order: {f.order ?? 0}</div>
                         </div>
                       </div>
-                      <div>
-                        <Label className="text-xs">Image URL</Label>
-                        <Input
-                          value={f.coverUrl}
-                          onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, coverUrl: e.target.value } : x)))}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between pt-2">
-                        <Button variant="destructive" size="icon" onClick={() => removeFund(f.id)}>
-                          <Trash2 className="size-4" />
-                        </Button>
-                        <Button variant="secondary" onClick={saveAll}>Save</Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </div>
               ))}
             </div>
           </TabsContent>
@@ -327,9 +338,7 @@ export default function CreateRegistry() {
 
           <TabsContent value="analytics" className="mt-4">
             <Card>
-              <CardHeader>
-                <CardTitle>Analytics</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle>Analytics</CardTitle></CardHeader>
               <CardContent>
                 {!analytics ? (
                   <p className="text-sm text-muted-foreground">No analytics yet or unable to fetch. Save your registry and come back.</p>
@@ -367,6 +376,49 @@ export default function CreateRegistry() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="settings" className="mt-4">
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader><CardTitle>Theme</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <Label>Preset</Label>
+                  <Select value={registry.theme || "modern"} onValueChange={(v) => updateRegistry({ theme: v })}>
+                    <SelectTrigger><SelectValue placeholder="Choose theme" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="modern">Modern (default)</SelectItem>
+                      <SelectItem value="serif">Minimal Serif</SelectItem>
+                      <SelectItem value="pastel">Elegant Pastel</SelectItem>
+                      <SelectItem value="dark">Dark Elegant</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button variant="secondary" onClick={saveAll}>Save Theme</Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader><CardTitle>Collaborators</CardTitle></CardHeader>
+                <CardContent>
+                  <div className="flex gap-2">
+                    <Input placeholder="email@example.com" value={collabEmail} onChange={(e) => setCollabEmail(e.target.value)} />
+                    <Button onClick={addCollab}><UserPlus className="size-4 mr-2"/>Add</Button>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    {collaborators.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No collaborators yet</p>
+                    ) : (
+                      collaborators.map((uid) => (
+                        <div key={uid} className="flex items-center justify-between text-sm border rounded px-3 py-2">
+                          <span className="text-muted-foreground">User ID: {uid}</span>
+                          <Button size="icon" variant="destructive" onClick={() => removeCollab(uid)}><X className="size-4"/></Button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
