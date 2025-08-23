@@ -116,22 +116,28 @@
 ##     file: "/app/frontend/src/pages/CreateRegistry.jsx, /app/frontend/src/lib/api.js, /app/frontend/src/pages/PublicRegistry.jsx"
 ##     stuck_count: 0
 ##     priority: "high"
-##     needs_retesting: true
+##     needs_retesting: false
 ##     status_history:
 ##         -working: true
 ##         -agent: "main"
 ##         -comment: "Added analytics tab, CSV export button, SEO tags on public page, guest email optional in contribution dialog."
+##         -working: true
+##         -agent: "testing"
+##         -comment: "Tested end-to-end UI flow. Analytics UI, CSV export functionality, and visibility toggles are working correctly. Gift management features including Pin/Visible toggles, reordering, and goal editing are functional."
 ##   - task: "Owner Dashboard with events list and quick stats"
 ##     implemented: true
 ##     working: true
 ##     file: "/app/frontend/src/pages/Dashboard.jsx"
 ##     stuck_count: 0
 ##     priority: "high"
-##     needs_retesting: true
+##     needs_retesting: false
 ##     status_history:
 ##         -working: true
 ##         -agent: "main"
 ##         -comment: "Added /dashboard route, events listing from /api/registries/mine, create event dialog, quick stats, manage/view actions."
+##         -working: true
+##         -agent: "testing"
+##         -comment: "Tested complete dashboard functionality. User signup, event creation, navigation to /create with proper rid parameter, localStorage synchronization, analytics blocks display, and event listing all working correctly."
 ## backend:
 ##   - task: "List my registries endpoint"
 ##     implemented: true
