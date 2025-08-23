@@ -119,7 +119,7 @@
 ##     file: "/app/frontend/src/pages/Admin.jsx, /app/frontend/src/pages/AdminRegistryDetail.jsx, /app/frontend/src/App.js, /app/frontend/src/lib/api.js"
 ##     stuck_count: 0
 ##     priority: "high"
-##     needs_retesting: false
+##     needs_retesting: true
 ##     status_history:
 ##         -working: true
 ##         -agent: "main"
