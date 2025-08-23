@@ -109,6 +109,7 @@ export default function CreateRegistry() {
         pinned: false,
       },
     ]);
+    setActiveTab("list");
   };
 
   const duplicateFund = (f) => {
