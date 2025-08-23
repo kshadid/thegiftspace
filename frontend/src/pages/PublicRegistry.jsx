@@ -24,6 +24,8 @@ export default function PublicRegistry() {
   const { slug } = useParams();
   const [registry, setRegistry] = React.useState(loadLocalRegistry());
   const [funds, setFunds] = React.useState(loadLocalFunds());
+  const [query, setQuery] = React.useState("");
+  const [activeCat, setActiveCat] = React.useState("All");
 
   React.useEffect(() => {
     const fetchData = async () => {
@@ -69,8 +71,20 @@ export default function PublicRegistry() {
     ? funds.reduce((acc, f) => acc + (f.raised || 0), 0)
     : totalLocal();
 
-  const pinned = funds.find((f) => f.pinned || (f.category || "").toLowerCase().includes("general"));
-  const others = pinned ? funds.filter((f) => f.id !== pinned.id) : funds;
+  // Filters
+  const categories = ["All", ...Array.from(new Set((funds || []).map((f) => f.category).filter(Boolean)))];
+  const matchesQuery = (f) => {
+    const q = (query || "").toLowerCase();
+    if (!q) return true;
+    return (f.title || "").toLowerCase().includes(q) || (f.description || "").toLowerCase().includes(q) || (f.category || "").toLowerCase().includes(q);
+  };
+  const matchesCat = (f) => activeCat === "All" || (f.category || "") === activeCat;
+  const filtered = (funds || []).filter((f) => matchesQuery(f) && matchesCat(f));
+
+  // Pinned only when no filters
+  const showPinned = !query && activeCat === "All";
+  const pinned = showPinned ? funds.find((f) => f.pinned || (f.category || "").toLowerCase().includes("general")) : null;
+  const others = pinned ? filtered.filter((f) => f.id !== pinned.id) : filtered;
 
   return (
     <div className="min-h-screen">
@@ -80,12 +94,12 @@ export default function PublicRegistry() {
         <div className="absolute inset-0 flex items-end">
           <div className="max-w-6xl mx-auto px-4 pb-6 w-full flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div>
-              <h1 className={`${theme.title} text-3xl md:text-4xl font-semibold`}>{registry.coupleNames}</h1>
+              <h1 className={`${theme.title} text-4xl font-semibold tracking-tight`}>{registry.coupleNames}</h1>
               <p className={`${theme.subtle}`}>{registry.eventDate} — {registry.location}</p>
             </div>
             <div className="text-right">
               <div className={`${theme.subtle} text-sm`}>Raised</div>
-              <div className={`${theme.title} text-2xl font-semibold`}>{formatCurrency(receivedAll, registry.currency)}</div>
+              <div className={`${theme.title} text-3xl font-semibold`}>{formatCurrency(receivedAll, registry.currency)}</div>
             </div>
           </div>
         </div>
@@ -94,13 +108,25 @@ export default function PublicRegistry() {
       <a id="gifts" />
 
       <div className="max-w-6xl mx-auto px-4 py-10">
-        {pinned ? (
-          <PinnedFund fund={pinned} currency={registry.currency} />
+        {/* Filters */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {categories.map((c) => (
+              <button key={c} onClick={() => setActiveCat(c)} className={`text-xs px-3 py-1 rounded-full border ${activeCat === c ? 'bg-primary text-primary-foreground border-primary' : 'bg-white text-foreground hover:bg-accent'}`}>{c}</button>
+            ))}
+          </div>
+          <div className="max-w-sm w-full md:w-auto">
+            <Input placeholder="Search gifts…" value={query} onChange={(e) => setQuery(e.target.value)} />
+          </div>
+        </div>
+
+        {showPinned && pinned ? (
+          <div className="mt-8"><PinnedFund fund={pinned} currency={registry.currency} /></div>
         ) : null}
 
         <div className="grid md:grid-cols-3 gap-6 mt-6">
           {others.length === 0 ? (
-            <div className="md:col-span-3 p-8 rounded-lg border text-center text-muted-foreground">No gifts yet.</div>
+            <div className="md:col-span-3 p-8 rounded-lg border text-center text-muted-foreground">No gifts match your filters.</div>
           ) : (
             others.map((f) => (
               <FundCard key={f.id} fund={f} currency={registry.currency} />
@@ -130,12 +156,12 @@ function PinnedFund({ fund, currency }) {
   const received = typeof fund.raised === "number" ? fund.raised : sumLocal(fund.id);
   const progress = typeof fund.progress === "number" ? fund.progress : Math.min(100, Math.round((received / (fund.goal || 1)) * 100));
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden hover:shadow-sm transition-shadow">
       <CardContent className="p-0">
         <img src={fund.coverUrl} alt={fund.title} className="w-full h-64 object-cover" />
         <div className="p-6 space-y-3">
           <div className="text-xs text-muted-foreground">Highlighted</div>
-          <div className="text-2xl font-semibold">{fund.title}</div>
+          <div className="text-2xl font-semibold tracking-tight">{fund.title}</div>
           <p className="text-sm text-muted-foreground max-w-2xl">{fund.description}</p>
           <div className="mt-2 max-w-2xl">
             <Progress value={progress} />
@@ -159,12 +185,12 @@ function FundCard({ fund, currency }) {
   const progress = typeof fund.progress === "number" ? fund.progress : Math.min(100, Math.round((received / (fund.goal || 1)) * 100));
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden hover:shadow-sm transition-shadow">
       <CardContent className="p-0">
         <img src={fund.coverUrl} alt={fund.title} className="w-full h-40 object-cover" />
         <div className="p-4 space-y-2">
           <div className="text-xs text-muted-foreground">{fund.category}</div>
-          <div className="font-medium">{fund.title}</div>
+          <div className="font-medium tracking-tight">{fund.title}</div>
           <p className="text-sm text-muted-foreground">{fund.description}</p>
           <div className="mt-2">
             <Progress value={progress} />
@@ -195,27 +221,11 @@ function ContributionDialog({ fund, currency, onComplete }) {
 
   const submit = async () => {
     try {
-      await createContribution({
-        fund_id: fund.id,
-        name: name || "Guest",
-        amount: Number(amount || 0),
-        message,
-        public: !!isPublic,
-        method,
-        guest_email: guestEmail || undefined,
-      });
+      await createContribution({ fund_id: fund.id, name: name || "Guest", amount: Number(amount || 0), message, public: !!isPublic, method, guest_email: guestEmail || undefined });
     } catch (e) {
       console.log("Backend contribution failed, using local mock", e?.message);
       const { addContribution } = await import("../mock/mock");
-      addContribution({
-        fundId: fund.id,
-        name: name || "Guest",
-        amount: Number(amount || 0),
-        message,
-        public: !!isPublic,
-        createdAt: new Date().toISOString(),
-        method,
-      });
+      addContribution({ fundId: fund.id, name: name || "Guest", amount: Number(amount || 0), message, public: !!isPublic, createdAt: new Date().toISOString(), method });
     }
     setOpen(false);
     onComplete();
@@ -278,11 +288,8 @@ function ContributionDialog({ fund, currency, onComplete }) {
 }
 
 function formatCurrency(amount, currency = "AED") {
-  try {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(amount);
-  } catch {
-    return `${currency} ${Number(amount || 0).toFixed(2)}`;
-  }
+  try { return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(amount); }
+  catch { return `${currency} ${Number(amount || 0).toFixed(2)}`; }
 }
 
 function setMetaTag(name, content) {

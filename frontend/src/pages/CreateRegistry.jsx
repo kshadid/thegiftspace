@@ -75,14 +75,8 @@ export default function CreateRegistry() {
       .catch(() => setCollaborators([]));
   }, []);
 
-  const saveAllLocal = () => {
-    saveRegistry(registry);
-    saveFunds(funds);
-  };
-
-  const silentCloudSave = async () => {
-    try { await syncToBackend(); } catch (_) {}
-  };
+  const saveAllLocal = () => { saveRegistry(registry); saveFunds(funds); };
+  const silentCloudSave = async () => { try { await syncToBackend(); } catch (_) {} };
 
   const syncToBackend = async () => {
     try {
@@ -154,12 +148,7 @@ export default function CreateRegistry() {
     }
   };
 
-  const publish = async () => {
-    setPublishing(true);
-    await saveAll();
-    setPublishing(false);
-    navigate(`/r/${registry.slug || "amir-leila"}#gifts`);
-  };
+  const publish = async () => { setPublishing(true); await saveAll(); setPublishing(false); navigate(`/r/${registry.slug || "amir-leila"}#gifts`); };
 
   const addFund = () => {
     const id = `fund_${Date.now()}`;
@@ -167,57 +156,18 @@ export default function CreateRegistry() {
     lastAddedId.current = id;
     setFunds((f) => [
       ...f,
-      {
-        id,
-        title: "New Gift",
-        description: "",
-        goal: 1000,
-        coverUrl: "https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=1200&auto=format&fit=crop",
-        category: "Experience",
-        visible: true,
-        order: nextOrder,
-        pinned: false,
-      },
+      { id, title: "New Gift", description: "", goal: 1000, coverUrl: "https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=1200&auto=format&fit=crop", category: "Experience", visible: true, order: nextOrder, pinned: false },
     ]);
-    setTimeout(() => {
-      const el = document.getElementById(`fund-${id}`);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 50);
+    setTimeout(() => { const el = document.getElementById(`fund-${id}`); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" }); }, 50);
   };
 
-  const duplicateFund = (f) => {
-    const id = `fund_${Date.now()}`;
-    const nextOrder = funds.length;
-    lastAddedId.current = id;
-    setFunds((all) => [...all, { ...f, id, title: `${f.title} (Copy)`, order: nextOrder }]);
-  };
-
+  const duplicateFund = (f) => { const id = `fund_${Date.now()}`; const nextOrder = funds.length; lastAddedId.current = id; setFunds((all) => [...all, { ...f, id, title: `${f.title} (Copy)`, order: nextOrder }]); };
   const removeFund = (id) => setFunds((f) => f.filter((x) => x.id !== id).map((x, i) => ({ ...x, order: i })));
 
   const onDragStart = (id) => (e) => { dragId.current = id; e.dataTransfer.effectAllowed = "move"; };
-  const onDragOver = (id) => (e) => {
-    e.preventDefault();
-    const from = funds.findIndex((x) => x.id === dragId.current);
-    const to = funds.findIndex((x) => x.id === id);
-    if (from === -1 || to === -1 || from === to) return;
-    const clone = [...funds];
-    const [moved] = clone.splice(from, 1);
-    clone.splice(to, 0, moved);
-    setFunds(clone.map((x, i) => ({ ...x, order: i })));
-  };
+  const onDragOver = (id) => (e) => { e.preventDefault(); const from = funds.findIndex((x) => x.id === dragId.current); const to = funds.findIndex((x) => x.id === id); if (from === -1 || to === -1 || from === to) return; const clone = [...funds]; const [moved] = clone.splice(from, 1); clone.splice(to, 0, moved); setFunds(clone.map((x, i) => ({ ...x, order: i }))); };
 
-  const moveFund = (id, delta) => {
-    setFunds((all) => {
-      const idx = all.findIndex((x) => x.id === id);
-      if (idx === -1) return all;
-      const to = Math.max(0, Math.min(all.length - 1, idx + delta));
-      if (to === idx) return all;
-      const clone = [...all];
-      const [moved] = clone.splice(idx, 1);
-      clone.splice(to, 0, moved);
-      return clone.map((x, i) => ({ ...x, order: i }));
-    });
-  };
+  const moveFund = (id, delta) => { setFunds((all) => { const idx = all.findIndex((x) => x.id === id); if (idx === -1) return all; const to = Math.max(0, Math.min(all.length - 1, idx + delta)); if (to === idx) return all; const clone = [...all]; const [moved] = clone.splice(idx, 1); clone.splice(to, 0, moved); return clone.map((x, i) => ({ ...x, order: i })); }); };
   const moveFundUp = (id) => moveFund(id, -1);
   const moveFundDown = (id) => moveFund(id, 1);
 
@@ -228,17 +178,22 @@ export default function CreateRegistry() {
   const commitGoal = (id) => { setFunds((all) => all.map((x) => (x.id === id ? { ...x, goal: Number(goalDraft || 0) } : x))); setEditingGoalId(null); silentCloudSave(); };
   const cancelGoal = () => setEditingGoalId(null);
 
-  const addCollab = async () => {
-    const regId = getRegId();
-    if (!regId || !collabEmail) return;
-    try { await addCollaborator(regId, collabEmail); setCollabEmail(""); toast({ title: "Collaborator added" }); }
-    catch (e) { toast({ title: "Failed to add", description: e?.response?.data?.detail || e?.message }); }
+  const addCollab = async () => { const regId = getRegId(); if (!regId || !collabEmail) return; try { await addCollaborator(regId, collabEmail); setCollabEmail(""); toast({ title: "Collaborator added" }); } catch (e) { toast({ title: "Failed to add", description: e?.response?.data?.detail || e?.message }); } };
+  const removeCollab = async (userId) => { const regId = getRegId(); try { await removeCollaborator(regId, userId); setCollaborators((list) => list.filter((id) => id !== userId)); toast({ title: "Removed" }); } catch (e) { toast({ title: "Failed to remove", description: e?.response?.data?.detail || e?.message }); } };
+
+  // Simple sparkline SVG
+  const Sparkline = ({ values = [], height = 28 }) => {
+    if (!values || values.length === 0) return null;
+    const max = Math.max(...values, 1);
+    const pts = values.map((v, i) => `${(i / (values.length - 1)) * 100},${100 - (v / max) * 100}`).join(" ");
+    return (
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full" style={{ height }}>
+        <polyline fill="none" stroke="currentColor" strokeWidth="2" points={pts} className="text-primary" />
+      </svg>
+    );
   };
-  const removeCollab = async (userId) => {
-    const regId = getRegId();
-    try { await removeCollaborator(regId, userId); setCollaborators((list) => list.filter((id) => id !== userId)); toast({ title: "Removed" }); }
-    catch (e) { toast({ title: "Failed to remove", description: e?.response?.data?.detail || e?.message }); }
-  };
+
+  const dailyVals = (analytics?.daily || []).map((d) => d.sum);
 
   return (
     <div className="min-h-screen">
@@ -340,16 +295,34 @@ export default function CreateRegistry() {
 
         {/* Analytics strip */}
         <div className="grid md:grid-cols-3 gap-4 mt-6">
-          <Stat label="Total raised" value={formatCurrency(analytics?.total || 0, registry.currency)} />
-          <Stat label="Contributions" value={String(analytics?.count || 0)} />
-          <Stat label="Average gift" value={formatCurrency(analytics?.average || 0, registry.currency)} />
+          <Card className="hover:shadow-sm transition-shadow">
+            <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Total raised</CardTitle></CardHeader>
+            <CardContent>
+              <div className="text-2xl font-semibold">{formatCurrency(analytics?.total || 0, registry.currency)}</div>
+              <div className="mt-2 text-muted-foreground"><Sparkline values={dailyVals} /></div>
+            </CardContent>
+          </Card>
+          <Card className="hover:shadow-sm transition-shadow">
+            <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Contributions</CardTitle></CardHeader>
+            <CardContent>
+              <div className="text-2xl font-semibold">{String(analytics?.count || 0)}</div>
+            </CardContent>
+          </Card>
+          <Card className="hover:shadow-sm transition-shadow">
+            <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Average gift</CardTitle></CardHeader>
+            <CardContent>
+              <div className="text-2xl font-semibold">{formatCurrency(analytics?.average || 0, registry.currency)}</div>
+            </CardContent>
+          </Card>
         </div>
+
+        <div className="mt-8 border-t" />
       </div>
 
       {/* Gifts grid */}
-      <div className="max-w-6xl mx-auto px-4 pb-16">
+      <div className="max-w-6xl mx-auto px-4 pb-20">
         <div className="mt-6 flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">{funds.length} gifts</div>
+          <h2 className="text-xl font-semibold tracking-tight">Gifts</h2>
           <div className="flex items-center gap-2">
             <Button variant="secondary" onClick={() => setFunds((all) => all.map((f) => (selectedIds.includes(f.id) ? { ...f, visible: true } : f)))} disabled={selectedIds.length === 0}>Show selected</Button>
             <Button variant="secondary" onClick={() => setFunds((all) => all.map((f) => (selectedIds.includes(f.id) ? { ...f, visible: false } : f)))} disabled={selectedIds.length === 0}>Hide selected</Button>
@@ -357,16 +330,16 @@ export default function CreateRegistry() {
           </div>
         </div>
 
-        <div className="mt-4 grid md:grid-cols-3 gap-4">
+        <div className="mt-4 grid md:grid-cols-3 gap-6">
           {funds.length === 0 ? (
-            <div className="md:col-span-3 p-8 rounded-lg border text-center text-muted-foreground">No gifts yet. Click "Add gift" to begin.</div>
+            <div className="md:col-span-3 p-10 rounded-lg border text-center text-muted-foreground">No gifts yet. Click "Add gift" to begin.</div>
           ) : (
             funds.map((f) => (
               <div key={f.id} id={`fund-${f.id}`} draggable onDragStart={onDragStart(f.id)} onDragOver={onDragOver(f.id)}>
-                <Card>
+                <Card className="hover:shadow-sm transition-shadow">
                   <CardContent className="p-0">
                     <div className="relative">
-                      <img src={f.coverUrl} alt={f.title} className="w-full h-32 object-cover rounded-t-lg" />
+                      <img src={f.coverUrl} alt={f.title} className="w-full h-40 object-cover rounded-t-lg" />
                       <div className="absolute top-2 left-2 text-xs bg-black/50 text-white px-2 py-1 rounded flex items-center gap-1"><GripVertical className="size-3"/>Drag</div>
                       <div className="absolute top-2 right-2 flex items-center gap-2">
                         <button className={`text-[10px] px-2 py-1 rounded-full border backdrop-blur ${f.pinned ? 'bg-primary text-primary-foreground border-primary' : 'bg-white/80 text-foreground'}`} onClick={() => togglePinQuick(f.id)} title={f.pinned ? 'Unpin' : 'Pin'}>
@@ -439,19 +412,7 @@ export default function CreateRegistry() {
   );
 }
 
-function Stat({ label, value }) {
-  return (
-    <div className="p-4 rounded-lg border bg-card">
-      <div className="text-sm text-muted-foreground">{label}</div>
-      <div className="text-xl font-semibold">{value}</div>
-    </div>
-  );
-}
-
 function formatCurrency(amount, currency = "AED") {
-  try {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(amount);
-  } catch {
-    return `${currency} ${Number(amount || 0).toFixed(2)}`;
-  }
+  try { return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(amount); }
+  catch { return `${currency} ${Number(amount || 0).toFixed(2)}`; }
 }
