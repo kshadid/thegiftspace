@@ -8,6 +8,7 @@ import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group";
 import { Label } from "../components/ui/label";
+import { Checkbox } from "../components/ui/checkbox";
 import { useToast } from "../hooks/use-toast";
 import { getPublicRegistry, createContribution } from "../lib/api";
 import { loadRegistry as loadLocalRegistry, loadFunds as loadLocalFunds, sumForFund as sumLocal, totalReceived as totalLocal } from "../mock/mock";
@@ -58,7 +59,7 @@ export default function PublicRegistry() {
       <div className="relative">
         <img src={registry.heroImage} alt="Hero" className="w-full h-[360px] object-cover" />
         <div className="absolute inset-0 bg-black/40" />
-        <div className="absolute inset-0 flex items-end">
+        <div className="absolute inset-0 flex items=end md:items-end">
           <div className="max-w-6xl mx-auto px-4 pb-6 w-full flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div>
               <h1 className="text-white text-3xl md:text-4xl font-semibold">{registry.coupleNames}</h1>
@@ -147,20 +148,18 @@ function ContributionDialog({ fund, currency, onComplete }) {
         name: name || "Guest",
         amount: Number(amount || 0),
         message,
-        public: isPublic,
+        public: !!isPublic,
         method,
       });
     } catch (e) {
-      // if backend fails, fall back to local mock by writing to localStorage via window event
       console.log("Backend contribution failed, using local mock", e?.message);
-      // Local mock add via dynamic import to avoid bundling cycles
       const { addContribution } = await import("../mock/mock");
       addContribution({
         fundId: fund.id,
         name: name || "Guest",
         amount: Number(amount || 0),
         message,
-        public: isPublic,
+        public: !!isPublic,
         createdAt: new Date().toISOString(),
         method,
       });
@@ -219,11 +218,11 @@ function ContributionDialog({ fund, currency, onComplete }) {
             </RadioGroup>
           </div>
           <div className="flex items-center gap-2">
-            <input id="public" type="checkbox" checked={isPublic} onChange={(e)=>setIsPublic(e.target.checked)} />
+            <Checkbox id="public" checked={isPublic} onCheckedChange={setIsPublic} />
             <Label htmlFor="public">Show my name/message publicly</Label>
           </div>
           <Button onClick={submit}>Confirm contribution</Button>
-          <p className="text-xs text-muted-foreground">This is a demo. Payments are mocked; contributions are recorded in the database.</p>
+          <p className="text-xs text-muted-foreground">This is a demo. Payments are mocked; contributions are recorded.</p>
         </div>
       </DialogContent>
     </Dialog>
