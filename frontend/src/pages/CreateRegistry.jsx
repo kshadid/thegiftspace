@@ -49,6 +49,18 @@ export default function CreateRegistry() {
   const [editingGoalId, setEditingGoalId] = React.useState(null);
   const [goalDraft, setGoalDraft] = React.useState("");
 
+  // If authenticated, do not use sample defaults; start clean in LS
+  React.useEffect(() => {
+    if (getAccessToken()) {
+      // Only reset to empty if we are seeing sample data
+      const reg = loadRegistry();
+      if (reg && reg.coupleNames === "Amir & Leila") {
+        saveRegistry({ coupleNames: "", eventDate: "", location: "", slug: "", heroImage: "", currency: DEFAULT_CURRENCY });
+        saveFunds([]);
+      }
+    }
+  }, []);
+
   const [manageOpen, setManageOpen] = React.useState(false);
 
   // Helpers
