@@ -139,6 +139,10 @@ async def get_registry_public(slug: str):
     response_funds: List[Dict[str, Any]] = []
     total_raised = 0.0
     for f in funds:
+        # Remove MongoDB _id field to avoid serialization issues
+        if "_id" in f:
+            del f["_id"]
+            
         agg = await db.contributions.aggregate([
             {"$match": {"fund_id": f["id"]}},
             {"$group": {"_id": None, "sum": {"$sum": "$amount"}}},
@@ -147,6 +151,10 @@ async def get_registry_public(slug: str):
         total_raised += raised
         progress = min(100, round((raised / float(f.get("goal") or 1)) * 100)) if f.get("goal") else 0
         response_funds.append({**f, "raised": raised, "progress": progress})
+
+    # Remove MongoDB _id field from registry doc
+    if "_id" in reg_doc:
+        del reg_doc["_id"]
 
     return PublicRegistryResponse(
         registry=Registry(**reg_doc),
