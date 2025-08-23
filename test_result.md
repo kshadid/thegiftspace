@@ -58,6 +58,8 @@
 ## agent_communication:
 ##     -agent: "main"
 ##     -message: "Auth forms now submit via form onSubmit with type=submit buttons and aria-labels. Please rerun E2E."
+##     -agent: "testing"
+##     -message: "✅ E2E COMPLETE: All auth and registry flows working. Step 1: /create redirects to /auth ✅. Step 2: Sign up with name/email/password, POST to /api/auth/register, navigate to /create ✅. Step 3: Fill registry fields, Save calls /api/registries and bulk_upsert ✅. Step 4: Preview navigates to /r/:slug ✅. Step 5: Contribute calls /api/contributions and totals update ✅. Auth forms use onSubmit with aria-labels as requested."
 
 #====================================================================================================
 # END - Testing Protocol - DO NOT EDIT OR REMOVE THIS SECTION
