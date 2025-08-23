@@ -33,6 +33,7 @@ export default function CreateRegistry() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [registry, setRegistry] = React.useState(loadRegistry());
+  const location = useLocation();
   const [funds, setFunds] = React.useState(loadFunds());
   const [publishing, setPublishing] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState("list");
