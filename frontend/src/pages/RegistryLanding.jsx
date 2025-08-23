@@ -21,7 +21,7 @@ export default function RegistryLanding() {
           <Link to="/" className="font-semibold text-lg tracking-tight">Honeymoon Registry</Link>
           <nav className="flex items-center gap-3">
             <Link to="/r/amir-leila" className="text-sm text-muted-foreground hover:text-foreground">Sample</Link>
-            <Button onClick={() => navigate("/create")}>Get Started</Button>
+            <Button onClick={() => navigate("/dashboard")}>Get Started</Button>
           </nav>
         </div>
       </header>
