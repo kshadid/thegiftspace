@@ -393,6 +393,22 @@ export default function CreateRegistry() {
                         <div className="relative">
                           <img src={f.coverUrl} alt={f.title} className="w-full h-32 object-cover rounded-t-lg" />
                           <div className="absolute top-2 left-2 text-xs bg-black/50 text-white px-2 py-1 rounded flex items-center gap-1"><GripVertical className="size-3"/>Drag</div>
+                          <div className="absolute top-2 right-2 flex items-center gap-2">
+                            <button
+                              className={`text-[10px] px-2 py-1 rounded-full border backdrop-blur ${f.pinned ? 'bg-primary text-primary-foreground border-primary' : 'bg-white/80 text-foreground'}`}
+                              onClick={() => togglePinQuick(f.id)}
+                              title={f.pinned ? 'Unpin' : 'Pin'}
+                            >
+                              <span className="inline-flex items-center gap-1"><Pin className="size-3"/> Pin</span>
+                            </button>
+                            <button
+                              className={`text-[10px] px-2 py-1 rounded-full border backdrop-blur ${f.visible !== false ? 'bg-white/80 text-foreground' : 'bg-destructive text-destructive-foreground border-destructive'}`}
+                              onClick={() => toggleVisibleQuick(f.id)}
+                              title={f.visible !== false ? 'Hide' : 'Show'}
+                            >
+                              <span className="inline-flex items-center gap-1">{f.visible !== false ? <Eye className="size-3"/> : <EyeOff className="size-3"/>} {f.visible !== false ? 'Visible' : 'Hidden'}</span>
+                            </button>
+                          </div>
                         </div>
                         <div className="p-4 space-y-3">
                           <div className="flex items-center justify-between">
