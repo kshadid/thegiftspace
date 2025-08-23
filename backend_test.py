@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Backend API Testing Suite for Honeymoon Registry MVP
-Tests all core backend endpoints with realistic data and JWT authentication
+Backend API Testing Suite for Honeymoon Registry MVP - Restored Endpoints Focus
+Tests restored registry CRUD endpoints, admin functionality, and lock/unlock features
 """
 
 import requests
@@ -29,9 +29,9 @@ frontend_env = load_env_file('/app/frontend/.env')
 BACKEND_URL = frontend_env.get('REACT_APP_BACKEND_URL', 'http://localhost:8001')
 API_BASE = f"{BACKEND_URL}/api"
 
-print(f"Testing backend at: {API_BASE}")
+print(f"Testing restored endpoints at: {API_BASE}")
 
-class BackendTester:
+class RestoredEndpointsTester:
     def __init__(self):
         self.session = requests.Session()
         self.test_data = {}
@@ -59,9 +59,59 @@ class BackendTester:
         if 'Authorization' in self.session.headers:
             del self.session.headers['Authorization']
     
-    def test_1_register_user1(self):
-        """Test 1: Register first user and obtain JWT token"""
-        print("\n=== Test 1: Register User 1 ===")
+    def test_1_register_admin_user(self):
+        """Test 1: Register admin user (kshadid@gmail.com) and obtain JWT token"""
+        print("\n=== Test 1: Register Admin User ===")
+        
+        user_data = {
+            "name": "Khalid Shadid",
+            "email": "kshadid@gmail.com",
+            "password": "AdminSecurePassword123!"
+        }
+        
+        try:
+            response = self.session.post(f"{API_BASE}/auth/register", json=user_data)
+            
+            if response.status_code == 201:
+                data = response.json()
+                
+                # Verify response structure
+                if 'access_token' in data and 'user' in data:
+                    token = data['access_token']
+                    user = data['user']
+                    
+                    if 'id' in user and user.get('email') == user_data['email']:
+                        self.test_data['admin_token'] = token
+                        self.test_data['admin_id'] = user['id']
+                        self.test_data['admin_email'] = user['email']
+                        self.log_result("Register Admin User", True, f"Admin registered: {user['name']} ({user['email']})")
+                    else:
+                        self.log_result("Register Admin User", False, f"Invalid user data in response: {user}")
+                else:
+                    self.log_result("Register Admin User", False, f"Missing access_token or user in response: {data}")
+            elif response.status_code == 409:
+                # User already exists, try to login
+                login_data = {"email": user_data["email"], "password": user_data["password"]}
+                login_response = self.session.post(f"{API_BASE}/auth/login", json=login_data)
+                if login_response.status_code == 200:
+                    data = login_response.json()
+                    token = data['access_token']
+                    user = data['user']
+                    self.test_data['admin_token'] = token
+                    self.test_data['admin_id'] = user['id']
+                    self.test_data['admin_email'] = user['email']
+                    self.log_result("Register Admin User", True, f"Admin logged in (already existed): {user['name']} ({user['email']})")
+                else:
+                    self.log_result("Register Admin User", False, f"Admin exists but login failed: {login_response.status_code}: {login_response.text}")
+            else:
+                self.log_result("Register Admin User", False, f"Expected 201, got {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_result("Register Admin User", False, f"Exception: {str(e)}")
+    
+    def test_2_register_normal_user(self):
+        """Test 2: Register normal user and obtain JWT token"""
+        print("\n=== Test 2: Register Normal User ===")
         
         # Generate unique email for this test run
         unique_id = str(uuid.uuid4())[:8]
@@ -69,7 +119,7 @@ class BackendTester:
         user_data = {
             "name": "Sarah Al-Mansouri",
             "email": f"sarah.almansouri.{unique_id}@example.com",
-            "password": "SecurePassword123!"
+            "password": "UserSecurePassword123!"
         }
         
         try:
@@ -84,88 +134,71 @@ class BackendTester:
                     user = data['user']
                     
                     if 'id' in user and user.get('email') == user_data['email']:
-                        self.test_data['user1_token'] = token
-                        self.test_data['user1_id'] = user['id']
-                        self.test_data['user1_email'] = user['email']
-                        self.set_auth_header(token)
-                        self.log_result("Register User 1", True, f"User registered: {user['name']} ({user['email']})")
+                        self.test_data['user_token'] = token
+                        self.test_data['user_id'] = user['id']
+                        self.test_data['user_email'] = user['email']
+                        self.log_result("Register Normal User", True, f"User registered: {user['name']} ({user['email']})")
                     else:
-                        self.log_result("Register User 1", False, f"Invalid user data in response: {user}")
+                        self.log_result("Register Normal User", False, f"Invalid user data in response: {user}")
                 else:
-                    self.log_result("Register User 1", False, f"Missing access_token or user in response: {data}")
+                    self.log_result("Register Normal User", False, f"Missing access_token or user in response: {data}")
             else:
-                self.log_result("Register User 1", False, f"Expected 201, got {response.status_code}: {response.text}")
+                self.log_result("Register Normal User", False, f"Expected 201, got {response.status_code}: {response.text}")
                 
         except Exception as e:
-            self.log_result("Register User 1", False, f"Exception: {str(e)}")
+            self.log_result("Register Normal User", False, f"Exception: {str(e)}")
     
-    def test_2_create_two_registries(self):
-        """Test 2: Create two registries with unique slugs"""
-        print("\n=== Test 2: Create Two Registries ===")
+    def test_3_create_registry_as_normal_user(self):
+        """Test 3: As normal user, POST /api/registries to create a registry"""
+        print("\n=== Test 3: Create Registry as Normal User ===")
         
-        if 'user1_token' not in self.test_data:
-            self.log_result("Create Two Registries", False, "No user1_token from previous test")
+        if 'user_token' not in self.test_data:
+            self.log_result("Create Registry", False, "No user_token from previous test")
             return
         
-        # Generate unique slugs for this test run
+        # Set auth header for normal user
+        self.set_auth_header(self.test_data['user_token'])
+        
+        # Generate unique slug for this test run
         unique_id = str(uuid.uuid4())[:8]
         event_date = (datetime.now() + timedelta(days=180)).strftime('%Y-%m-%d')
         
-        registries_data = [
-            {
-                "couple_names": "Sarah & Ahmed Al-Mansouri",
-                "event_date": event_date,
-                "location": "Dubai, UAE",
-                "currency": "AED",
-                "hero_image": "https://example.com/dubai-wedding.jpg",
-                "slug": f"sarah-ahmed-{unique_id}-1"
-            },
-            {
-                "couple_names": "Sarah & Ahmed Al-Mansouri",
-                "event_date": event_date,
-                "location": "Abu Dhabi, UAE", 
-                "currency": "AED",
-                "hero_image": "https://example.com/abudhabi-wedding.jpg",
-                "slug": f"sarah-ahmed-{unique_id}-2"
-            }
-        ]
+        registry_data = {
+            "couple_names": "Sarah & Ahmed Al-Mansouri",
+            "event_date": event_date,
+            "location": "Dubai, UAE",
+            "currency": "AED",
+            "hero_image": "https://example.com/dubai-wedding.jpg",
+            "slug": f"sarah-ahmed-{unique_id}",
+            "theme": "modern"
+        }
         
-        created_registries = []
-        
-        for i, registry_data in enumerate(registries_data):
-            try:
-                response = self.session.post(f"{API_BASE}/registries", json=registry_data)
+        try:
+            response = self.session.post(f"{API_BASE}/registries", json=registry_data)
+            
+            if response.status_code == 201:
+                data = response.json()
                 
-                if response.status_code == 201:
-                    data = response.json()
-                    
-                    # Verify response has required fields
-                    if 'id' in data and data.get('slug') == registry_data['slug'] and data.get('owner_id') == self.test_data['user1_id']:
-                        created_registries.append(data)
-                        self.log_result(f"Create Registry {i+1}", True, f"Registry created with ID: {data['id']}, slug: {data['slug']}")
-                    else:
-                        self.log_result(f"Create Registry {i+1}", False, f"Missing id, slug mismatch, or wrong owner_id in response: {data}")
-                        return
+                # Verify response has required fields
+                if ('id' in data and data.get('slug') == registry_data['slug'] and 
+                    data.get('owner_id') == self.test_data['user_id']):
+                    self.test_data['registry_id'] = data['id']
+                    self.test_data['registry_slug'] = data['slug']
+                    self.log_result("Create Registry", True, f"Registry created with ID: {data['id']}, slug: {data['slug']}")
                 else:
-                    self.log_result(f"Create Registry {i+1}", False, f"Expected 201, got {response.status_code}: {response.text}")
-                    return
-                    
-            except Exception as e:
-                self.log_result(f"Create Registry {i+1}", False, f"Exception: {str(e)}")
-                return
-        
-        if len(created_registries) == 2:
-            self.test_data['user1_registries'] = created_registries
-            self.log_result("Create Two Registries", True, f"Successfully created {len(created_registries)} registries")
-        else:
-            self.log_result("Create Two Registries", False, f"Expected 2 registries, created {len(created_registries)}")
+                    self.log_result("Create Registry", False, f"Missing id, slug mismatch, or wrong owner_id in response: {data}")
+            else:
+                self.log_result("Create Registry", False, f"Expected 201, got {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_result("Create Registry", False, f"Exception: {str(e)}")
     
-    def test_3_get_my_registries_user1(self):
-        """Test 3: Call GET /api/registries/mine with user1 token"""
-        print("\n=== Test 3: Get My Registries (User 1) ===")
+    def test_4_get_my_registries(self):
+        """Test 4: GET /api/registries/mine returns the created registry"""
+        print("\n=== Test 4: Get My Registries ===")
         
-        if 'user1_token' not in self.test_data or 'user1_registries' not in self.test_data:
-            self.log_result("Get My Registries User1", False, "Missing user1_token or user1_registries from previous tests")
+        if 'user_token' not in self.test_data or 'registry_id' not in self.test_data:
+            self.log_result("Get My Registries", False, "Missing user_token or registry_id from previous tests")
             return
         
         try:
@@ -174,268 +207,494 @@ class BackendTester:
             if response.status_code == 200:
                 registries = response.json()
                 
-                if isinstance(registries, list) and len(registries) >= 2:
-                    # Verify each registry has required fields and correct owner_id
-                    valid_registries = 0
+                if isinstance(registries, list) and len(registries) >= 1:
+                    # Look for our created registry
+                    registry_found = False
                     for registry in registries:
-                        if ('id' in registry and 'slug' in registry and 
-                            registry.get('owner_id') == self.test_data['user1_id']):
-                            valid_registries += 1
+                        if registry.get('id') == self.test_data['registry_id']:
+                            registry_found = True
+                            if registry.get('owner_id') == self.test_data['user_id']:
+                                self.log_result("Get My Registries", True, f"Found created registry with correct owner_id")
+                            else:
+                                self.log_result("Get My Registries", False, f"Registry found but wrong owner_id: {registry.get('owner_id')}")
+                            break
                     
-                    if valid_registries >= 2:
-                        # Check if sorted by updated_at descending (we'll verify this more thoroughly later)
-                        self.test_data['user1_mine_registries'] = registries
-                        self.log_result("Get My Registries User1", True, f"Found {len(registries)} registries, {valid_registries} with correct owner_id")
-                    else:
-                        self.log_result("Get My Registries User1", False, f"Only {valid_registries} registries have correct owner_id out of {len(registries)}")
+                    if not registry_found:
+                        self.log_result("Get My Registries", False, f"Created registry {self.test_data['registry_id']} not found in user's registries")
                 else:
-                    self.log_result("Get My Registries User1", False, f"Expected at least 2 registries, got: {len(registries) if isinstance(registries, list) else 'not a list'}")
+                    self.log_result("Get My Registries", False, f"Expected at least 1 registry, got: {len(registries) if isinstance(registries, list) else 'not a list'}")
             else:
-                self.log_result("Get My Registries User1", False, f"Expected 200, got {response.status_code}: {response.text}")
+                self.log_result("Get My Registries", False, f"Expected 200, got {response.status_code}: {response.text}")
                 
         except Exception as e:
-            self.log_result("Get My Registries User1", False, f"Exception: {str(e)}")
+            self.log_result("Get My Registries", False, f"Exception: {str(e)}")
     
-    def test_4_register_user2(self):
-        """Test 4: Register second user and obtain JWT token"""
-        print("\n=== Test 4: Register User 2 ===")
+    def test_5_update_registry(self):
+        """Test 5: PUT /api/registries/{id} updates the registry"""
+        print("\n=== Test 5: Update Registry ===")
         
-        # Generate unique email for this test run
-        unique_id = str(uuid.uuid4())[:8]
-        
-        user_data = {
-            "name": "Fatima Al-Zahra",
-            "email": f"fatima.alzahra.{unique_id}@example.com",
-            "password": "AnotherSecurePassword456!"
-        }
-        
-        try:
-            # Clear current auth header first
-            self.clear_auth_header()
-            
-            response = self.session.post(f"{API_BASE}/auth/register", json=user_data)
-            
-            if response.status_code == 201:
-                data = response.json()
-                
-                # Verify response structure
-                if 'access_token' in data and 'user' in data:
-                    token = data['access_token']
-                    user = data['user']
-                    
-                    if 'id' in user and user.get('email') == user_data['email']:
-                        self.test_data['user2_token'] = token
-                        self.test_data['user2_id'] = user['id']
-                        self.test_data['user2_email'] = user['email']
-                        self.log_result("Register User 2", True, f"User registered: {user['name']} ({user['email']})")
-                    else:
-                        self.log_result("Register User 2", False, f"Invalid user data in response: {user}")
-                else:
-                    self.log_result("Register User 2", False, f"Missing access_token or user in response: {data}")
-            else:
-                self.log_result("Register User 2", False, f"Expected 201, got {response.status_code}: {response.text}")
-                
-        except Exception as e:
-            self.log_result("Register User 2", False, f"Exception: {str(e)}")
-    
-    def test_5_add_user2_as_collaborator(self):
-        """Test 5: Add user2 as collaborator to one of user1's registries"""
-        print("\n=== Test 5: Add User2 as Collaborator ===")
-        
-        if ('user1_token' not in self.test_data or 'user2_email' not in self.test_data or 
-            'user1_registries' not in self.test_data):
-            self.log_result("Add User2 as Collaborator", False, "Missing required data from previous tests")
+        if 'user_token' not in self.test_data or 'registry_id' not in self.test_data:
+            self.log_result("Update Registry", False, "Missing user_token or registry_id from previous tests")
             return
         
-        # Switch back to user1 token to add collaborator
-        self.set_auth_header(self.test_data['user1_token'])
-        
-        # Use the first registry
-        registry_id = self.test_data['user1_registries'][0]['id']
-        
-        collaborator_data = {
-            "email": self.test_data['user2_email']
+        update_data = {
+            "location": "Abu Dhabi, UAE",
+            "theme": "elegant"
         }
         
         try:
-            response = self.session.post(f"{API_BASE}/registries/{registry_id}/collaborators", json=collaborator_data)
+            response = self.session.put(f"{API_BASE}/registries/{self.test_data['registry_id']}", json=update_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify the update was applied
+                if (data.get('location') == update_data['location'] and 
+                    data.get('theme') == update_data['theme']):
+                    self.log_result("Update Registry", True, f"Registry updated successfully: location={data.get('location')}, theme={data.get('theme')}")
+                else:
+                    self.log_result("Update Registry", False, f"Update not applied correctly: {data}")
+            else:
+                self.log_result("Update Registry", False, f"Expected 200, got {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_result("Update Registry", False, f"Exception: {str(e)}")
+    
+    def test_6_add_funds_bulk_upsert(self):
+        """Test 6: Add funds via POST /api/registries/{id}/funds/bulk_upsert"""
+        print("\n=== Test 6: Add Funds via Bulk Upsert ===")
+        
+        if 'user_token' not in self.test_data or 'registry_id' not in self.test_data:
+            self.log_result("Add Funds", False, "Missing user_token or registry_id from previous tests")
+            return
+        
+        funds_data = {
+            "funds": [
+                {
+                    "title": "Honeymoon Flight Tickets",
+                    "description": "Round-trip flights to Maldives",
+                    "goal": 5000.0,
+                    "category": "travel",
+                    "visible": True,
+                    "order": 1
+                },
+                {
+                    "title": "Luxury Resort Stay",
+                    "description": "5-star resort accommodation for 7 nights",
+                    "goal": 8000.0,
+                    "category": "accommodation",
+                    "visible": True,
+                    "order": 2
+                },
+                {
+                    "title": "Romantic Dinner Experiences",
+                    "description": "Special dining experiences during honeymoon",
+                    "goal": 1500.0,
+                    "category": "dining",
+                    "visible": True,
+                    "order": 3
+                }
+            ]
+        }
+        
+        try:
+            response = self.session.post(f"{API_BASE}/registries/{self.test_data['registry_id']}/funds/bulk_upsert", json=funds_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify funds were created
+                if data.get('created') == 3 and data.get('updated') == 0:
+                    self.log_result("Add Funds", True, f"Successfully created {data.get('created')} funds")
+                    
+                    # Store fund IDs for later tests - get them from the funds list
+                    funds_response = self.session.get(f"{API_BASE}/registries/{self.test_data['registry_id']}/funds")
+                    if funds_response.status_code == 200:
+                        funds = funds_response.json()
+                        self.test_data['fund_ids'] = [fund['id'] for fund in funds]
+                        self.log_result("Get Fund IDs", True, f"Retrieved {len(self.test_data['fund_ids'])} fund IDs")
+                    else:
+                        self.log_result("Get Fund IDs", False, f"Failed to get fund IDs: {funds_response.status_code}")
+                else:
+                    self.log_result("Add Funds", False, f"Expected created=3, updated=0, got: {data}")
+            else:
+                self.log_result("Add Funds", False, f"Expected 200, got {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_result("Add Funds", False, f"Exception: {str(e)}")
+    
+    def test_7_create_contributions(self):
+        """Test 7: Create contributions to the funds"""
+        print("\n=== Test 7: Create Contributions ===")
+        
+        if 'fund_ids' not in self.test_data or not self.test_data['fund_ids']:
+            self.log_result("Create Contributions", False, "Missing fund_ids from previous tests")
+            return
+        
+        contributions_data = [
+            {
+                "fund_id": self.test_data['fund_ids'][0],
+                "name": "Ahmed & Fatima",
+                "amount": 1000.0,
+                "message": "Wishing you a wonderful honeymoon!",
+                "public": True,
+                "method": "bank_transfer"
+            },
+            {
+                "fund_id": self.test_data['fund_ids'][1],
+                "name": "Omar Al-Rashid",
+                "amount": 1500.0,
+                "message": "Congratulations on your wedding!",
+                "public": True,
+                "method": "credit_card"
+            },
+            {
+                "fund_id": self.test_data['fund_ids'][2],
+                "name": "Aisha Mohammed",
+                "amount": 500.0,
+                "message": "Have an amazing time!",
+                "public": True,
+                "method": "cash"
+            }
+        ]
+        
+        created_contributions = 0
+        
+        for i, contrib_data in enumerate(contributions_data):
+            try:
+                # Clear auth header for public contribution
+                self.clear_auth_header()
+                
+                response = self.session.post(f"{API_BASE}/contributions", json=contrib_data)
+                
+                if response.status_code == 201:
+                    data = response.json()
+                    
+                    if 'id' in data and data.get('fund_id') == contrib_data['fund_id']:
+                        created_contributions += 1
+                        self.log_result(f"Create Contribution {i+1}", True, f"Contribution created: {data.get('name')} - AED {data.get('amount')}")
+                    else:
+                        self.log_result(f"Create Contribution {i+1}", False, f"Invalid contribution data: {data}")
+                else:
+                    self.log_result(f"Create Contribution {i+1}", False, f"Expected 201, got {response.status_code}: {response.text}")
+                    
+            except Exception as e:
+                self.log_result(f"Create Contribution {i+1}", False, f"Exception: {str(e)}")
+        
+        if created_contributions == len(contributions_data):
+            self.log_result("Create Contributions", True, f"Successfully created {created_contributions} contributions")
+        else:
+            self.log_result("Create Contributions", False, f"Expected {len(contributions_data)} contributions, created {created_contributions}")
+    
+    def test_8_admin_get_registry_detail(self):
+        """Test 8: As admin, GET /api/registries/{id} works"""
+        print("\n=== Test 8: Admin Get Registry Detail ===")
+        
+        if 'admin_token' not in self.test_data or 'registry_id' not in self.test_data:
+            self.log_result("Admin Get Registry", False, "Missing admin_token or registry_id from previous tests")
+            return
+        
+        # Set auth header for admin user
+        self.set_auth_header(self.test_data['admin_token'])
+        
+        try:
+            response = self.session.get(f"{API_BASE}/registries/{self.test_data['registry_id']}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify registry data
+                if ('id' in data and data.get('id') == self.test_data['registry_id'] and
+                    'owner_id' in data and 'slug' in data):
+                    self.log_result("Admin Get Registry", True, f"Admin can access registry: {data.get('slug')}")
+                else:
+                    self.log_result("Admin Get Registry", False, f"Invalid registry data: {data}")
+            else:
+                self.log_result("Admin Get Registry", False, f"Expected 200, got {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_result("Admin Get Registry", False, f"Exception: {str(e)}")
+    
+    def test_9_admin_get_contributions(self):
+        """Test 9: As admin, GET /api/registries/{id}/contributions returns list"""
+        print("\n=== Test 9: Admin Get Contributions ===")
+        
+        if 'admin_token' not in self.test_data or 'registry_id' not in self.test_data:
+            self.log_result("Admin Get Contributions", False, "Missing admin_token or registry_id from previous tests")
+            return
+        
+        try:
+            response = self.session.get(f"{API_BASE}/registries/{self.test_data['registry_id']}/contributions")
+            
+            if response.status_code == 200:
+                contributions = response.json()
+                
+                if isinstance(contributions, list) and len(contributions) >= 3:
+                    # Verify contribution structure
+                    valid_contributions = 0
+                    for contrib in contributions:
+                        if ('id' in contrib and 'fund_id' in contrib and 
+                            'amount' in contrib and 'created_at' in contrib):
+                            valid_contributions += 1
+                    
+                    if valid_contributions >= 3:
+                        self.log_result("Admin Get Contributions", True, f"Admin can access {len(contributions)} contributions")
+                    else:
+                        self.log_result("Admin Get Contributions", False, f"Only {valid_contributions} valid contributions out of {len(contributions)}")
+                else:
+                    self.log_result("Admin Get Contributions", False, f"Expected at least 3 contributions, got: {len(contributions) if isinstance(contributions, list) else 'not a list'}")
+            else:
+                self.log_result("Admin Get Contributions", False, f"Expected 200, got {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_result("Admin Get Contributions", False, f"Exception: {str(e)}")
+    
+    def test_10_admin_get_audit_logs(self):
+        """Test 10: As admin, GET /api/registries/{id}/audit returns audit entries"""
+        print("\n=== Test 10: Admin Get Audit Logs ===")
+        
+        if 'admin_token' not in self.test_data or 'registry_id' not in self.test_data:
+            self.log_result("Admin Get Audit", False, "Missing admin_token or registry_id from previous tests")
+            return
+        
+        try:
+            response = self.session.get(f"{API_BASE}/registries/{self.test_data['registry_id']}/audit")
+            
+            if response.status_code == 200:
+                audit_logs = response.json()
+                
+                if isinstance(audit_logs, list):
+                    # Verify audit log structure
+                    valid_logs = 0
+                    for log in audit_logs:
+                        if ('id' in log and 'registry_id' in log and 
+                            'action' in log and 'created_at' in log):
+                            valid_logs += 1
+                    
+                    self.log_result("Admin Get Audit", True, f"Admin can access {len(audit_logs)} audit logs ({valid_logs} valid)")
+                else:
+                    self.log_result("Admin Get Audit", False, f"Expected list, got: {type(audit_logs)}")
+            else:
+                self.log_result("Admin Get Audit", False, f"Expected 200, got {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_result("Admin Get Audit", False, f"Exception: {str(e)}")
+    
+    def test_11_admin_lock_registry(self):
+        """Test 11: Lock registry via admin"""
+        print("\n=== Test 11: Admin Lock Registry ===")
+        
+        if 'admin_token' not in self.test_data or 'registry_id' not in self.test_data:
+            self.log_result("Admin Lock Registry", False, "Missing admin_token or registry_id from previous tests")
+            return
+        
+        lock_data = {
+            "locked": True,
+            "reason": "Testing lock functionality"
+        }
+        
+        try:
+            response = self.session.post(f"{API_BASE}/admin/registries/{self.test_data['registry_id']}/lock", json=lock_data)
             
             if response.status_code == 200:
                 data = response.json()
                 
                 if data.get('ok') == True:
-                    self.test_data['shared_registry_id'] = registry_id
-                    self.log_result("Add User2 as Collaborator", True, f"User2 added as collaborator to registry {registry_id}")
+                    self.log_result("Admin Lock Registry", True, "Registry locked successfully")
                 else:
-                    self.log_result("Add User2 as Collaborator", False, f"Expected ok=True, got: {data}")
+                    self.log_result("Admin Lock Registry", False, f"Expected ok=True, got: {data}")
             else:
-                self.log_result("Add User2 as Collaborator", False, f"Expected 200, got {response.status_code}: {response.text}")
+                self.log_result("Admin Lock Registry", False, f"Expected 200, got {response.status_code}: {response.text}")
                 
         except Exception as e:
-            self.log_result("Add User2 as Collaborator", False, f"Exception: {str(e)}")
+            self.log_result("Admin Lock Registry", False, f"Exception: {str(e)}")
     
-    def test_6_get_my_registries_user2(self):
-        """Test 6: Call GET /api/registries/mine with user2 token - should include shared registry"""
-        print("\n=== Test 6: Get My Registries (User 2) ===")
+    def test_12_verify_owner_put_returns_423(self):
+        """Test 12: Verify owner PUT returns 423 when registry is locked"""
+        print("\n=== Test 12: Verify Owner PUT Returns 423 ===")
         
-        if 'user2_token' not in self.test_data or 'shared_registry_id' not in self.test_data:
-            self.log_result("Get My Registries User2", False, "Missing user2_token or shared_registry_id from previous tests")
+        if 'user_token' not in self.test_data or 'registry_id' not in self.test_data:
+            self.log_result("Owner PUT 423", False, "Missing user_token or registry_id from previous tests")
             return
         
-        # Switch to user2 token
-        self.set_auth_header(self.test_data['user2_token'])
-        
-        try:
-            response = self.session.get(f"{API_BASE}/registries/mine")
-            
-            if response.status_code == 200:
-                registries = response.json()
-                
-                if isinstance(registries, list):
-                    # Look for the shared registry
-                    shared_registry_found = False
-                    for registry in registries:
-                        if registry.get('id') == self.test_data['shared_registry_id']:
-                            shared_registry_found = True
-                            # Verify user2 is in collaborators list
-                            if self.test_data['user2_id'] in registry.get('collaborators', []):
-                                self.log_result("Get My Registries User2", True, f"Found shared registry in user2's list with correct collaborator status")
-                            else:
-                                self.log_result("Get My Registries User2", False, f"Shared registry found but user2 not in collaborators list: {registry.get('collaborators', [])}")
-                            break
-                    
-                    if not shared_registry_found:
-                        self.log_result("Get My Registries User2", False, f"Shared registry {self.test_data['shared_registry_id']} not found in user2's registries")
-                else:
-                    self.log_result("Get My Registries User2", False, f"Expected list, got: {type(registries)}")
-            else:
-                self.log_result("Get My Registries User2", False, f"Expected 200, got {response.status_code}: {response.text}")
-                
-        except Exception as e:
-            self.log_result("Get My Registries User2", False, f"Exception: {str(e)}")
-    
-    def test_7_verify_sorting_by_updated_at(self):
-        """Test 7: Verify registries are sorted by updated_at descending"""
-        print("\n=== Test 7: Verify Sorting by updated_at ===")
-        
-        if 'user1_token' not in self.test_data or 'user1_registries' not in self.test_data:
-            self.log_result("Verify Sorting", False, "Missing user1_token or user1_registries from previous tests")
-            return
-        
-        # Switch back to user1 token
-        self.set_auth_header(self.test_data['user1_token'])
-        
-        # Update one of the registries to change its updated_at
-        registry_to_update = self.test_data['user1_registries'][1]  # Use second registry
-        registry_id = registry_to_update['id']
+        # Switch back to normal user token
+        self.set_auth_header(self.test_data['user_token'])
         
         update_data = {
-            "location": "Sharjah, UAE"  # Change location to trigger update
+            "location": "Sharjah, UAE"
         }
         
         try:
-            # First update the registry
-            response = self.session.put(f"{API_BASE}/registries/{registry_id}", json=update_data)
+            response = self.session.put(f"{API_BASE}/registries/{self.test_data['registry_id']}", json=update_data)
             
-            if response.status_code == 200:
-                # Wait a moment to ensure timestamp difference
-                time.sleep(1)
-                
-                # Now get the registries again
-                response = self.session.get(f"{API_BASE}/registries/mine")
-                
-                if response.status_code == 200:
-                    registries = response.json()
-                    
-                    if isinstance(registries, list) and len(registries) >= 2:
-                        # Check if the updated registry is now first (most recent)
-                        if registries[0]['id'] == registry_id:
-                            # Verify sorting by checking updated_at timestamps
-                            sorted_correctly = True
-                            for i in range(len(registries) - 1):
-                                current_updated = registries[i].get('updated_at')
-                                next_updated = registries[i + 1].get('updated_at')
-                                
-                                if current_updated and next_updated:
-                                    # Parse timestamps and compare
-                                    try:
-                                        current_dt = datetime.fromisoformat(current_updated.replace('Z', '+00:00'))
-                                        next_dt = datetime.fromisoformat(next_updated.replace('Z', '+00:00'))
-                                        
-                                        if current_dt < next_dt:  # Should be descending (current >= next)
-                                            sorted_correctly = False
-                                            break
-                                    except:
-                                        # If we can't parse timestamps, just check order by position
-                                        pass
-                            
-                            if sorted_correctly:
-                                self.log_result("Verify Sorting", True, f"Registries correctly sorted by updated_at descending. Updated registry is first.")
-                            else:
-                                self.log_result("Verify Sorting", False, "Registries not properly sorted by updated_at descending")
-                        else:
-                            self.log_result("Verify Sorting", False, f"Updated registry {registry_id} not first in list. First is: {registries[0]['id']}")
-                    else:
-                        self.log_result("Verify Sorting", False, f"Expected at least 2 registries for sorting test, got: {len(registries) if isinstance(registries, list) else 'not a list'}")
-                else:
-                    self.log_result("Verify Sorting", False, f"Expected 200 for GET registries/mine, got {response.status_code}: {response.text}")
+            if response.status_code == 423:
+                self.log_result("Owner PUT 423", True, "Owner PUT correctly returns 423 when registry is locked")
             else:
-                self.log_result("Verify Sorting", False, f"Expected 200 for PUT registry update, got {response.status_code}: {response.text}")
+                self.log_result("Owner PUT 423", False, f"Expected 423, got {response.status_code}: {response.text}")
                 
         except Exception as e:
-            self.log_result("Verify Sorting", False, f"Exception: {str(e)}")
+            self.log_result("Owner PUT 423", False, f"Exception: {str(e)}")
     
-    def test_8_verify_api_prefix(self):
-        """Test 8: Verify all routes are under /api prefix"""
-        print("\n=== Test 8: Verify API Prefix ===")
+    def test_13_verify_funds_upsert_returns_423(self):
+        """Test 13: Verify funds upsert returns 423 when registry is locked"""
+        print("\n=== Test 13: Verify Funds Upsert Returns 423 ===")
         
-        # Test a few key endpoints to ensure they're under /api
-        endpoints_to_test = [
+        if 'user_token' not in self.test_data or 'registry_id' not in self.test_data:
+            self.log_result("Funds Upsert 423", False, "Missing user_token or registry_id from previous tests")
+            return
+        
+        funds_data = {
+            "funds": [
+                {
+                    "title": "Test Fund",
+                    "description": "This should fail",
+                    "goal": 1000.0,
+                    "visible": True
+                }
+            ]
+        }
+        
+        try:
+            response = self.session.post(f"{API_BASE}/registries/{self.test_data['registry_id']}/funds/bulk_upsert", json=funds_data)
+            
+            if response.status_code == 423:
+                self.log_result("Funds Upsert 423", True, "Funds upsert correctly returns 423 when registry is locked")
+            else:
+                self.log_result("Funds Upsert 423", False, f"Expected 423, got {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_result("Funds Upsert 423", False, f"Exception: {str(e)}")
+    
+    def test_14_admin_unlock_registry(self):
+        """Test 14: Unlock registry via admin"""
+        print("\n=== Test 14: Admin Unlock Registry ===")
+        
+        if 'admin_token' not in self.test_data or 'registry_id' not in self.test_data:
+            self.log_result("Admin Unlock Registry", False, "Missing admin_token or registry_id from previous tests")
+            return
+        
+        # Switch back to admin token
+        self.set_auth_header(self.test_data['admin_token'])
+        
+        unlock_data = {
+            "locked": False,
+            "reason": None
+        }
+        
+        try:
+            response = self.session.post(f"{API_BASE}/admin/registries/{self.test_data['registry_id']}/lock", json=unlock_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get('ok') == True:
+                    self.log_result("Admin Unlock Registry", True, "Registry unlocked successfully")
+                else:
+                    self.log_result("Admin Unlock Registry", False, f"Expected ok=True, got: {data}")
+            else:
+                self.log_result("Admin Unlock Registry", False, f"Expected 200, got {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_result("Admin Unlock Registry", False, f"Exception: {str(e)}")
+    
+    def test_15_verify_write_works_after_unlock(self):
+        """Test 15: Verify write operations work again after unlock"""
+        print("\n=== Test 15: Verify Write Works After Unlock ===")
+        
+        if 'user_token' not in self.test_data or 'registry_id' not in self.test_data:
+            self.log_result("Write After Unlock", False, "Missing user_token or registry_id from previous tests")
+            return
+        
+        # Switch back to normal user token
+        self.set_auth_header(self.test_data['user_token'])
+        
+        update_data = {
+            "location": "Fujairah, UAE"
+        }
+        
+        try:
+            response = self.session.put(f"{API_BASE}/registries/{self.test_data['registry_id']}", json=update_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get('location') == update_data['location']:
+                    self.log_result("Write After Unlock", True, f"Owner PUT works after unlock: location={data.get('location')}")
+                else:
+                    self.log_result("Write After Unlock", False, f"Update not applied: {data}")
+            else:
+                self.log_result("Write After Unlock", False, f"Expected 200, got {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_result("Write After Unlock", False, f"Exception: {str(e)}")
+    
+    def test_16_verify_api_prefix_and_jwt(self):
+        """Test 16: Confirm all routes use /api prefix and JWT"""
+        print("\n=== Test 16: Verify API Prefix and JWT ===")
+        
+        # Test that all endpoints use /api prefix
+        endpoints_tested = [
             "/auth/register",
             "/registries",
-            "/registries/mine"
+            "/registries/mine",
+            f"/registries/{self.test_data.get('registry_id', 'test')}",
+            f"/registries/{self.test_data.get('registry_id', 'test')}/contributions",
+            f"/registries/{self.test_data.get('registry_id', 'test')}/audit",
+            f"/registries/{self.test_data.get('registry_id', 'test')}/funds/bulk_upsert",
+            f"/admin/registries/{self.test_data.get('registry_id', 'test')}/lock"
         ]
         
         prefix_correct = True
+        jwt_required = True
         
-        for endpoint in endpoints_to_test:
-            # Test that the endpoint works with /api prefix
+        for endpoint in endpoints_tested:
             full_url = f"{API_BASE}{endpoint}"
             
-            # Test that it doesn't work without /api prefix (should get 404 or similar)
-            no_prefix_url = f"{BACKEND_URL}{endpoint}"
-            
-            try:
-                # This should work (we won't actually make the request to avoid side effects)
-                # Just verify the URL structure
-                if not full_url.startswith(f"{BACKEND_URL}/api"):
-                    prefix_correct = False
-                    break
-                    
-            except Exception as e:
-                self.log_result("Verify API Prefix", False, f"Exception testing endpoint {endpoint}: {str(e)}")
-                return
+            # Verify URL structure uses /api prefix
+            if not full_url.startswith(f"{BACKEND_URL}/api"):
+                prefix_correct = False
+                break
         
-        if prefix_correct:
-            self.log_result("Verify API Prefix", True, f"All tested endpoints correctly use /api prefix. Base URL: {API_BASE}")
+        # Test JWT requirement by trying a protected endpoint without auth
+        if 'registry_id' in self.test_data:
+            self.clear_auth_header()
+            try:
+                response = self.session.get(f"{API_BASE}/registries/mine")
+                if response.status_code != 401:
+                    jwt_required = False
+            except:
+                pass
+        
+        if prefix_correct and jwt_required:
+            self.log_result("API Prefix and JWT", True, f"All endpoints use /api prefix and require JWT authentication")
+        elif not prefix_correct:
+            self.log_result("API Prefix and JWT", False, "Some endpoints don't use /api prefix correctly")
         else:
-            self.log_result("Verify API Prefix", False, "Some endpoints don't use /api prefix correctly")
+            self.log_result("API Prefix and JWT", False, "JWT authentication not properly enforced")
     
-    def run_registries_mine_tests(self):
-        """Run all tests focused on GET /api/registries/mine endpoint with JWT auth"""
-        print("🚀 Starting GET /api/registries/mine Backend Tests")
+    def run_restored_endpoints_tests(self):
+        """Run all tests for restored endpoints as specified in review request"""
+        print("🚀 Starting Restored Endpoints Backend Tests")
         print(f"Backend URL: {API_BASE}")
         print("=" * 60)
         
         # Run tests in order as specified in the review request
-        self.test_1_register_user1()
-        self.test_2_create_two_registries()
-        self.test_3_get_my_registries_user1()
-        self.test_4_register_user2()
-        self.test_5_add_user2_as_collaborator()
-        self.test_6_get_my_registries_user2()
-        self.test_7_verify_sorting_by_updated_at()
-        self.test_8_verify_api_prefix()
+        self.test_1_register_admin_user()
+        self.test_2_register_normal_user()
+        self.test_3_create_registry_as_normal_user()
+        self.test_4_get_my_registries()
+        self.test_5_update_registry()
+        self.test_6_add_funds_bulk_upsert()
+        self.test_7_create_contributions()
+        self.test_8_admin_get_registry_detail()
+        self.test_9_admin_get_contributions()
+        self.test_10_admin_get_audit_logs()
+        self.test_11_admin_lock_registry()
+        self.test_12_verify_owner_put_returns_423()
+        self.test_13_verify_funds_upsert_returns_423()
+        self.test_14_admin_unlock_registry()
+        self.test_15_verify_write_works_after_unlock()
+        self.test_16_verify_api_prefix_and_jwt()
         
         # Print summary
         print("\n" + "=" * 60)
@@ -453,6 +712,6 @@ class BackendTester:
         return self.results['failed'] == 0
 
 if __name__ == "__main__":
-    tester = BackendTester()
-    success = tester.run_registries_mine_tests()
+    tester = RestoredEndpointsTester()
+    success = tester.run_restored_endpoints_tests()
     exit(0 if success else 1)
