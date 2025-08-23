@@ -92,6 +92,9 @@
 ##         -working: true
 ##         -agent: "main"
 ##         -comment: "Created unique indexes and simple IP rate limiting for auth endpoints."
+##         -working: true
+##         -agent: "testing"
+##         -comment: "Tested unique indexes - both email and registry slug correctly return 409 for duplicates. Rate limiting implemented but hard to test in K8s environment with distributed proxy IPs."
 ## frontend:
 ##   - task: "Analytics UI + CSV export + visibility toggle"
 ##     implemented: true
