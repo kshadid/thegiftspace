@@ -121,22 +121,28 @@
 ##     file: "/app/frontend/src/pages/CreateRegistry.jsx, /app/frontend/src/pages/PublicRegistry.jsx, /app/frontend/src/lib/api.js"
 ##     stuck_count: 0
 ##     priority: "high"
-##     needs_retesting: true
+##     needs_retesting: false
 ##     status_history:
 ##         -working: true
 ##         -agent: "main"
 ##         -comment: "Create/Update registry, bulk upsert funds, public fetch, and contributions call backend with fallback to mock."
+##         -working: true
+##         -agent: "testing"
+##         -comment: "Public registry and contribution flows tested successfully. API calls fail gracefully and fallback to mock data works correctly. UI interactions (contribute modal, form filling) work properly."
 ##   - task: "Auth UI + Protected routes"
 ##     implemented: true
-##     working: true
+##     working: false
 ##     file: "/app/frontend/src/context/AuthContext.jsx, /app/frontend/src/pages/Auth.jsx, /app/frontend/src/App.js"
-##     stuck_count: 0
+##     stuck_count: 1
 ##     priority: "high"
-##     needs_retesting: true
+##     needs_retesting: false
 ##     status_history:
 ##         -working: true
 ##         -agent: "main"
 ##         -comment: "Login/Register flows implemented; /create protected."
+##         -working: false
+##         -agent: "testing"
+##         -comment: "CRITICAL: Auth forms are not functional. No network requests are made when submitting login or signup forms. Form fields can be filled but submission handlers are not working. Protected route redirect works correctly (/create -> /auth when unauthenticated)."
 ## metadata:
 ##   created_by: "main_agent"
 ##   version: "1.0"
