@@ -522,7 +522,7 @@ async def list_registry_contributions(registry_id: str, current: UserPublic = De
     reg = await db.registries.find_one({"id": registry_id})
     if not reg:
         raise HTTPException(status_code=404, detail="Registry not found")
-    if not is_owner_or_collab(reg, current.id):
+    if not is_owner_or_collab(reg, current.id) and not (await is_admin_user(current)):
         raise HTTPException(status_code=403, detail="Not allowed")
     fund_ids = [f["id"] for f in await db.funds.find({"registry_id": registry_id}).to_list(1000)]
     items = await db.contributions.find({"fund_id": {"$in": fund_ids}}).to_list(5000)
