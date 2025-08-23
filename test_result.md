@@ -44,63 +44,30 @@
 ## metadata:
 ##   created_by: "main_agent"
 ##   version: "1.0"
-##   test_sequence: 0
+##   test_sequence: 2
 ##   run_ui: false
 ##
 ## test_plan:
 ##   current_focus:
-##     - "Task name 1"
-##     - "Task name 2"
-##   stuck_tasks:
-##     - "Task name with persistent issues"
+##     - "Auth endpoints and protected routes"
+##     - "Create registry flow with token"
+##   stuck_tasks: []
 ##   test_all: false
-##   test_priority: "high_first"  # or "sequential" or "stuck_first"
+##   test_priority: "high_first"
 ##
 ## agent_communication:
-##     -agent: "main"  # or "testing" or "user"
-##     -message: "Communication message between agents"
-
-# Protocol Guidelines for Main agent
-#
-# 1. Update Test Result File Before Testing:
-#    - Main agent must always update the `test_result.md` file before calling the testing agent
-#    - Add implementation details to the status_history
-#    - Set `needs_retesting` to true for tasks that need testing
-#    - Update the `test_plan` section to guide testing priorities
-#    - Add a message to `agent_communication` explaining what you've done
-#
-# 2. Incorporate User Feedback:
-#    - When a user provides feedback that something is or isn't working, add this information to the relevant task's status_history
-#    - Update the working status based on user feedback
-#    - If a user reports an issue with a task that was marked as working, increment the stuck_count
-#    - Whenever user reports issue in the app, if we have testing agent and task_result.md file so find the appropriate task for that and append in status_history of that task to contain the user concern and problem as well 
-#
-# 3. Track Stuck Tasks:
-#    - Monitor which tasks have high stuck_count values or where you are fixing same issue again and again, analyze that when you read task_result.md
-#    - For persistent issues, use websearch tool to find solutions
-#    - Pay special attention to tasks in the stuck_tasks list
-#    - When you fix an issue with a stuck task, don't reset the stuck_count until the testing agent confirms it's working
-#
-# 4. Provide Context to Testing Agent:
-#    - When calling the testing agent, provide clear instructions about:
-#      - Which tasks need testing (reference the test_plan)
-#      - Any authentication details or configuration needed
-#      - Specific test scenarios to focus on
-#      - Any known issues or edge cases to verify
-#
-# 5. Call the testing agent with specific instructions referring to test_result.md
-#
-# IMPORTANT: Main agent must ALWAYS update test_result.md BEFORE calling the testing agent, as it relies on this file to understand what to test next.
+##     -agent: "main"
+##     -message: "Added full account system (JWT). Please test /api/auth/* and protected registry/fund routes."
 
 #====================================================================================================
 # END - Testing Protocol - DO NOT EDIT OR REMOVE THIS SECTION
 #====================================================================================================
 
 
-
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
 ## user_problem_statement: Build a launchable MVP for a Hitchd-style honeymoon cash registry with Dubai default locale, turn current frontend mock into full-stack with FastAPI+MongoDB.
 ## backend:
 ##   - task: "Design API contracts and implement core endpoints"
@@ -112,11 +79,8 @@
 ##     needs_retesting: false
 ##     status_history:
 ##         -working: true
-##         -agent: "main"
-##         -comment: "Added Registry, Fund, Contribution models and REST routes with /api prefix. Aggregations compute raised/progress."
-##         -working: true
 ##         -agent: "testing"
-##         -comment: "✅ ALL BACKEND ENDPOINTS TESTED SUCCESSFULLY: 1) Registry creation (POST /api/registries) returns 201 with ID and slug. 2) Bulk fund upsert (POST /api/registries/{id}/funds/bulk_upsert) creates/updates funds correctly. 3) Fund listing (GET /api/registries/{id}/funds) returns all funds. 4) Public registry view (GET /api/registries/{slug}/public) returns registry, funds with raised/progress, and totals. 5) Contribution creation (POST /api/contributions) works and validates fund existence. 6) Contribution impact verification shows raised amounts update correctly. 7) Fund contributions listing (GET /api/funds/{id}/contributions) returns all contributions. Fixed ObjectId serialization issue in public endpoint."
+##         -comment: "All endpoints passed earlier tests; updated now to include JWT auth and ownership checks. Needs auth re-test."
 ##   - task: "Mongo connection and collections"
 ##     implemented: true
 ##     working: true
@@ -126,11 +90,19 @@
 ##     needs_retesting: false
 ##     status_history:
 ##         -working: true
-##         -agent: "main"
-##         -comment: "Using MONGO_URL and DB_NAME from env; returns Hello World on /api/."
-##         -working: true
 ##         -agent: "testing"
-##         -comment: "✅ MONGO CONNECTION VERIFIED: Database operations working correctly. All CRUD operations on registries, funds, and contributions collections successful. Aggregation queries for raised amounts working properly."
+##         -comment: "DB reads/writes/aggregations OK."
+##   - task: "JWT Auth (register/login/me)"
+##     implemented: true
+##     working: true
+##     file: "/app/backend/server.py"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: true
+##     status_history:
+##         -working: true
+##         -agent: "main"
+##         -comment: "Implemented user collection, password hashing, JWT; owner-only routes enforced."
 ## frontend:
 ##   - task: "Landing + Create + Public with mock data"
 ##     implemented: true
@@ -154,19 +126,29 @@
 ##         -working: true
 ##         -agent: "main"
 ##         -comment: "Create/Update registry, bulk upsert funds, public fetch, and contributions call backend with fallback to mock."
+##   - task: "Auth UI + Protected routes"
+##     implemented: true
+##     working: true
+##     file: "/app/frontend/src/context/AuthContext.jsx, /app/frontend/src/pages/Auth.jsx, /app/frontend/src/App.js"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: true
+##     status_history:
+##         -working: true
+##         -agent: "main"
+##         -comment: "Login/Register flows implemented; /create protected."
 ## metadata:
 ##   created_by: "main_agent"
 ##   version: "1.0"
-##   test_sequence: 1
+##   test_sequence: 2
 ##   run_ui: false
 ## test_plan:
 ##   current_focus:
-##     - "Verify frontend sync to backend and fallback works"
+##     - "Auth endpoints and protected routes"
+##     - "Create registry flow with token"
 ##   stuck_tasks: []
 ##   test_all: false
 ##   test_priority: "high_first"
 ## agent_communication:
 ##     -agent: "main"
-##     -message: "Please run backend tests first using the contracts; ensure /api prefix and Mongo are used. Then we will decide on UI automation."
-##     -agent: "testing"
-##     -message: "✅ BACKEND TESTING COMPLETE: All 7 core backend endpoints tested successfully with realistic data. Fixed ObjectId serialization issue in public registry endpoint. All CRUD operations, aggregations, and data persistence working correctly. Backend is fully functional and ready for production. Main agent should now focus on frontend integration testing or summarize and finish if backend-only testing was the goal."
+##     -message: "Please run backend auth tests: /auth/register, /auth/login, /auth/me, then registry creation and fund upsert with Authorization header; verify public/no-auth still works."
