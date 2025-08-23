@@ -71,7 +71,14 @@ function LoginForm({ onLogin, loading }) {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   return (
-    <div className="space-y-3">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onLogin({ email, password });
+      }}
+      className="space-y-3"
+      data-testid="login-form"
+    >
       <div>
         <Label>Email</Label>
         <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
@@ -80,10 +87,10 @@ function LoginForm({ onLogin, loading }) {
         <Label>Password</Label>
         <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
       </div>
-      <Button type="button" disabled={loading} className="w-full mt-2" onClick={() => onLogin({ email, password })}>
+      <Button aria-label="Log in" type="submit" disabled={loading} className="w-full mt-2" data-testid="login-submit">
         {loading ? "Please wait…" : "Log in"}
       </Button>
-    </div>
+    </form>
   );
 }
 
@@ -92,7 +99,14 @@ function SignupForm({ onSignup, loading }) {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   return (
-    <div className="space-y-3">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSignup({ name, email, password });
+      }}
+      className="space-y-3"
+      data-testid="signup-form"
+    >
       <div>
         <Label>Full name</Label>
         <Input value={name} onChange={(e) => setName(e.target.value)} required />
@@ -105,9 +119,9 @@ function SignupForm({ onSignup, loading }) {
         <Label>Password</Label>
         <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
       </div>
-      <Button type="button" disabled={loading} className="w-full mt-2" onClick={() => onSignup({ name, email, password })}>
+      <Button aria-label="Create account" type="submit" disabled={loading} className="w-full mt-2" data-testid="signup-submit">
         {loading ? "Please wait…" : "Create account"}
       </Button>
-    </div>
+    </form>
   );
 }
