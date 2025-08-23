@@ -90,7 +90,7 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibond text-gray-900 mb-4">7. Privacy</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Privacy</h2>
             <p className="text-gray-700 leading-relaxed">
               Your privacy is important to us. Please review our Privacy Policy, which also governs your use of the Service, 
               to understand our practices.
