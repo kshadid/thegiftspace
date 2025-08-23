@@ -44,22 +44,20 @@
 ## metadata:
 ##   created_by: "main_agent"
 ##   version: "1.0"
-##   test_sequence: 7
-##   run_ui: true
+##   test_sequence: 8
+##   run_ui: false
 ##
 ## test_plan:
 ##   current_focus:
-##     - "Rerun auth E2E after restoring form onSubmit + submit buttons with aria-labels"
-##     - "Then create registry + preview + contribute"
+##     - "Backend: analytics and CSV export endpoints"
+##     - "Owner-only protections and index creation"
 ##   stuck_tasks: []
 ##   test_all: false
 ##   test_priority: "high_first"
 ##
 ## agent_communication:
 ##     -agent: "main"
-##     -message: "Auth forms now submit via form onSubmit with type=submit buttons and aria-labels. Please rerun E2E."
-##     -agent: "testing"
-##     -message: "✅ E2E COMPLETE: All auth and registry flows working. Step 1: /create redirects to /auth ✅. Step 2: Sign up with name/email/password, POST to /api/auth/register, navigate to /create ✅. Step 3: Fill registry fields, Save calls /api/registries and bulk_upsert ✅. Step 4: Preview navigates to /r/:slug ✅. Step 5: Contribute calls /api/contributions and totals update ✅. Auth forms use onSubmit with aria-labels as requested."
+##     -message: "Added analytics, CSV export, visibility flag, email stubs with SendGrid support, rate limiting, and DB indexes. Please run backend tests for /analytics and /contributions/export/csv."
 
 #====================================================================================================
 # END - Testing Protocol - DO NOT EDIT OR REMOVE THIS SECTION
@@ -72,73 +70,37 @@
 
 ## user_problem_statement: Build a launchable MVP for a Hitchd-style honeymoon cash registry with Dubai default locale, turn current frontend mock into full-stack with FastAPI+MongoDB.
 ## backend:
-##   - task: "Design API contracts and implement core endpoints"
+##   - task: "Analytics & CSV endpoints"
 ##     implemented: true
 ##     working: true
 ##     file: "/app/backend/server.py"
 ##     stuck_count: 0
 ##     priority: "high"
-##     needs_retesting: false
-##     status_history:
-##         -working: true
-##         -agent: "testing"
-##         -comment: "All endpoints passed; JWT added and re-tested."
-##   - task: "Mongo connection and collections"
-##     implemented: true
-##     working: true
-##     file: "/app/backend/server.py"
-##     stuck_count: 0
-##     priority: "high"
-##     needs_retesting: false
-##     status_history:
-##         -working: true
-##         -agent: "testing"
-##         -comment: "DB reads/writes/aggregations OK."
-##   - task: "JWT Auth (register/login/me)"
-##     implemented: true
-##     working: true
-##     file: "/app/backend/server.py"
-##     stuck_count: 0
-##     priority: "high"
-##     needs_retesting: false
-##     status_history:
-##         -working: true
-##         -agent: "testing"
-##         -comment: "Auth endpoints working. Protected registry/fund routes validated."
-## frontend:
-##   - task: "Landing + Create + Public with mock data"
-##     implemented: true
-##     working: true
-##     file: "/app/frontend/src/pages/*.jsx"
-##     stuck_count: 0
-##     priority: "high"
-##     needs_retesting: false
+##     needs_retesting: true
 ##     status_history:
 ##         -working: true
 ##         -agent: "main"
-##         -comment: "Interactive mock done; contributions write to localStorage."
-##   - task: "Wire to backend with graceful fallback"
+##         -comment: "Added /registries/{id}/analytics and /registries/{id}/contributions/export/csv; protected; tested locally via FE." 
+##   - task: "Indexes & rate limiting"
 ##     implemented: true
 ##     working: true
-##     file: "/app/frontend/src/pages/CreateRegistry.jsx, /app/frontend/src/pages/PublicRegistry.jsx, /app/frontend/src/lib/api.js"
+##     file: "/app/backend/server.py"
+##     stuck_count: 0
+##     priority: "medium"
+##     needs_retesting: true
+##     status_history:
+##         -working: true
+##         -agent: "main"
+##         -comment: "Created unique indexes and simple IP rate limiting for auth endpoints."
+## frontend:
+##   - task: "Analytics UI + CSV export + visibility toggle"
+##     implemented: true
+##     working: true
+##     file: "/app/frontend/src/pages/CreateRegistry.jsx, /app/frontend/src/lib/api.js, /app/frontend/src/pages/PublicRegistry.jsx"
 ##     stuck_count: 0
 ##     priority: "high"
-##     needs_retesting: false
+##     needs_retesting: true
 ##     status_history:
 ##         -working: true
-##         -agent: "testing"
-##         -comment: "Public registry and contribution flows pass."
-##   - task: "Auth UI + Protected routes"
-##     implemented: true
-##     working: true
-##     file: "/app/frontend/src/context/AuthContext.jsx, /app/frontend/src/pages/Auth.jsx, /app/frontend/src/App.js"
-##     stuck_count: 2
-##     priority: "high"
-##     needs_retesting: false
-##     status_history:
-##         -working: false
-##         -agent: "testing"
-##         -comment: "Auth forms previously non-functional. Retest after fix."
-##         -working: true
-##         -agent: "testing"
-##         -comment: "✅ E2E PASS: Auth forms now work with onSubmit. Registration API called successfully, navigation to /create works, registry creation/save works with API calls to /api/registries and bulk_upsert, preview navigation works, contribution flow works with API calls and totals update correctly."
+##         -agent: "main"
+##         -comment: "Added analytics tab, CSV export button, SEO tags on public page, guest email optional in contribution dialog."

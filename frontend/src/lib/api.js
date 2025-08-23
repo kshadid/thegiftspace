@@ -2,7 +2,7 @@ import axios from "axios";
 
 const BASE = (process.env.REACT_APP_BACKEND_URL || "") + "/api";
 
-const api = axios.create({ baseURL: BASE, timeout: 15000 });
+const api = axios.create({ baseURL: BASE, timeout: 20000 });
 
 // Token helpers
 export function setAccessToken(token) {
@@ -60,6 +60,17 @@ export async function getPublicRegistry(slug) {
 export async function createContribution(contrib) {
   const { data } = await api.post(`/contributions`, contrib);
   return data;
+}
+
+// Analytics & Exports
+export async function getRegistryAnalytics(registryId) {
+  const { data } = await api.get(`/registries/${registryId}/analytics`);
+  return data;
+}
+
+export async function exportRegistryCSV(registryId) {
+  const response = await api.get(`/registries/${registryId}/contributions/export/csv`, { responseType: "blob" });
+  return response.data;
 }
 
 export default api;

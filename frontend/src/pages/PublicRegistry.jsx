@@ -42,8 +42,13 @@ export default function PublicRegistry() {
             progress: f.progress,
           }))
         );
+        // SEO meta tags
+        document.title = `${data.registry.couple_names} · Wedding Registry`;
+        const desc = `${data.registry.couple_names} · ${data.registry.event_date} — ${data.registry.location}`;
+        setMetaTag("description", desc);
+        setMetaTag("og:title", document.title);
+        setMetaTag("og:description", desc);
       } catch (e) {
-        // fallback to local mock
         console.log("Public page using local mock due to backend error", e?.message);
       }
     };
@@ -59,7 +64,7 @@ export default function PublicRegistry() {
       <div className="relative">
         <img src={registry.heroImage} alt="Hero" className="w-full h-[360px] object-cover" />
         <div className="absolute inset-0 bg-black/40" />
-        <div className="absolute inset-0 flex items=end md:items-end">
+        <div className="absolute inset-0 flex items-end">
           <div className="max-w-6xl mx-auto px-4 pb-6 w-full flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div>
               <h1 className="text-white text-3xl md:text-4xl font-semibold">{registry.coupleNames}</h1>
@@ -76,7 +81,7 @@ export default function PublicRegistry() {
       <div className="max-w-6xl mx-auto px-4 py-10">
         <div className="grid md:grid-cols-3 gap-6">
           {funds.map((f) => (
-            <FundCard key={f.id} fund={f} currency={registry.currency} slug={slug} />
+            <FundCard key={f.id} fund={f} currency={registry.currency} />
           ))}
         </div>
 
@@ -97,7 +102,7 @@ export default function PublicRegistry() {
   );
 }
 
-function FundCard({ fund, currency, slug }) {
+function FundCard({ fund, currency }) {
   const { toast } = useToast();
   const received = typeof fund.raised === "number" ? fund.raised : sumLocal(fund.id);
   const progress = typeof fund.progress === "number" ? fund.progress : Math.min(100, Math.round((received / (fund.goal || 1)) * 100));
@@ -121,7 +126,6 @@ function FundCard({ fund, currency, slug }) {
           <div className="pt-2">
             <ContributionDialog fund={fund} currency={currency} onComplete={() => {
               toast({ title: "Contribution recorded", description: "Thank you!" });
-              // Quick refresh: try to reload public data (best-effort)
               window.location.reload();
             }} />
           </div>
@@ -137,6 +141,7 @@ function ContributionDialog({ fund, currency, onComplete }) {
   const [name, setName] = React.useState("");
   const [message, setMessage] = React.useState("");
   const [method, setMethod] = React.useState("card");
+  const [guestEmail, setGuestEmail] = React.useState("");
   const [isPublic, setIsPublic] = React.useState(true);
 
   const quick = [100, 250, 500, 1000];
@@ -150,6 +155,7 @@ function ContributionDialog({ fund, currency, onComplete }) {
         message,
         public: !!isPublic,
         method,
+        guest_email: guestEmail || undefined,
       });
     } catch (e) {
       console.log("Backend contribution failed, using local mock", e?.message);
@@ -193,9 +199,15 @@ function ContributionDialog({ fund, currency, onComplete }) {
             </div>
             <Input className="mt-2" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
           </div>
-          <div>
-            <Label className="text-xs">Your name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Optional" />
+          <div className="grid md:grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Your name</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Optional" />
+            </div>
+            <div>
+              <Label className="text-xs">Your email (for receipt)</Label>
+              <Input type="email" value={guestEmail} onChange={(e) => setGuestEmail(e.target.value)} placeholder="Optional" />
+            </div>
           </div>
           <div>
             <Label className="text-xs">Message</Label>
@@ -235,4 +247,17 @@ function formatCurrency(amount, currency = "AED") {
   } catch {
     return `${currency} ${Number(amount || 0).toFixed(2)}`;
   }
+}
+
+function setMetaTag(name, content) {
+  const heads = document.getElementsByTagName("head");
+  if (!heads || !heads[0]) return;
+  let el = heads[0].querySelector(`meta[name='${name}']`) || heads[0].querySelector(`meta[property='${name}']`);
+  if (!el) {
+    el = document.createElement("meta");
+    if (name.startsWith("og:")) el.setAttribute("property", name);
+    else el.setAttribute("name", name);
+    heads[0].appendChild(el);
+  }
+  el.setAttribute("content", content);
 }
