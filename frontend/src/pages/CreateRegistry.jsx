@@ -421,9 +421,36 @@ export default function CreateRegistry() {
                               <Button size="icon" variant="destructive" onClick={() => removeFund(f.id)} title="Delete"><Trash2 className="size-4" /></Button>
                             </div>
                           </div>
-                          <div>
-                            <Label className="text-xs">Title</Label>
-                            <Input value={f.title} onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, title: e.target.value } : x)))} />
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex-1">
+                              <Label className="text-xs">Title</Label>
+                              <Input value={f.title} onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, title: e.target.value } : x)))} />
+                            </div>
+                            <div className="mt-5">
+                              {editingGoalId === f.id ? (
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    type="number"
+                                    value={goalDraft}
+                                    onChange={(e) => setGoalDraft(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') commitGoal(f.id);
+                                      if (e.key === 'Escape') cancelGoal();
+                                    }}
+                                    onBlur={() => commitGoal(f.id)}
+                                    className="w-28 h-8 text-xs"
+                                  />
+                                </div>
+                              ) : (
+                                <button
+                                  className="text-xs border rounded px-2 py-1 hover:bg-accent"
+                                  onClick={() => startEditGoal(f)}
+                                  title="Edit goal"
+                                >
+                                  Goal: {registry.currency || DEFAULT_CURRENCY} {Number(f.goal || 0).toLocaleString()}
+                                </button>
+                              )}
+                            </div>
                           </div>
                           <div>
                             <Label className="text-xs">Description</Label>
