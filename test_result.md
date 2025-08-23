@@ -81,6 +81,9 @@
 ##         -working: true
 ##         -agent: "testing"
 ##         -comment: "All endpoints passed earlier tests; updated now to include JWT auth and ownership checks. Needs auth re-test."
+##         -working: true
+##         -agent: "testing"
+##         -comment: "PROTECTED ROUTES TESTING COMPLETED: ✅ POST /api/registries with Authorization header returns 201 with owner_id, ✅ POST /api/registries/{id}/funds/bulk_upsert with Authorization returns created>=1, ✅ GET /api/registries/{slug}/public works without auth, ✅ POST /api/contributions without auth returns 201 and increases raised amount. All protected routes working correctly with JWT."
 ##   - task: "Mongo connection and collections"
 ##     implemented: true
 ##     working: true
