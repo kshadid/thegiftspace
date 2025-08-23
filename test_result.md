@@ -121,3 +121,26 @@
 ##         -working: true
 ##         -agent: "main"
 ##         -comment: "Added analytics tab, CSV export button, SEO tags on public page, guest email optional in contribution dialog."
+##   - task: "Owner Dashboard with events list and quick stats"
+##     implemented: true
+##     working: true
+##     file: "/app/frontend/src/pages/Dashboard.jsx"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: true
+##     status_history:
+##         -working: true
+##         -agent: "main"
+##         -comment: "Added /dashboard route, events listing from /api/registries/mine, create event dialog, quick stats, manage/view actions."
+## backend:
+##   - task: "List my registries endpoint"
+##     implemented: true
+##     working: true
+##     file: "/app/backend/server.py"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: true
+##     status_history:
+##         -working: true
+##         -agent: "main"
+##         -comment: "Added GET /api/registries/mine to fetch registries where user is owner or collaborator; sorted by updated_at desc."
