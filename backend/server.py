@@ -24,6 +24,23 @@ from sentry_sdk.integrations.starlette import StarletteIntegration
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+# Initialize Sentry for error monitoring
+SENTRY_DSN = os.environ.get('SENTRY_DSN', '')
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[
+            StarletteIntegration(transaction_style="endpoint"),
+            FastApiIntegration(auto_enabling_integrations=True),
+        ],
+        traces_sample_rate=0.1,  # Capture 10% of transactions for performance monitoring
+        release=os.environ.get('APP_VERSION', 'development'),
+        environment=os.environ.get('ENVIRONMENT', 'production'),
+    )
+    logging.info("Sentry monitoring initialized")
+else:
+    logging.info("Sentry DSN not configured, monitoring disabled")
+
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
