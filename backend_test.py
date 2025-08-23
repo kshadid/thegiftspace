@@ -50,6 +50,15 @@ class BackendTester:
             self.results['errors'].append(f"{test_name}: {message}")
             print(f"❌ {test_name}: FAILED {message}")
     
+    def set_auth_header(self, token):
+        """Set authorization header for authenticated requests"""
+        self.session.headers.update({'Authorization': f'Bearer {token}'})
+    
+    def clear_auth_header(self):
+        """Clear authorization header"""
+        if 'Authorization' in self.session.headers:
+            del self.session.headers['Authorization']
+    
     def test_1_create_registry(self):
         """Test 1: Create a registry with realistic data"""
         print("\n=== Test 1: Create Registry ===")
