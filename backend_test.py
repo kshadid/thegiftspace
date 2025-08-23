@@ -381,8 +381,12 @@ class RestoredEndpointsTester:
         """Test 8: As admin, GET /api/registries/{id} works"""
         print("\n=== Test 8: Admin Get Registry Detail ===")
         
-        if 'admin_token' not in self.test_data or 'registry_id' not in self.test_data:
-            self.log_result("Admin Get Registry", False, "Missing admin_token or registry_id from previous tests")
+        if 'admin_token' not in self.test_data:
+            self.log_result("Admin Get Registry", False, "Admin token not available - skipping admin test")
+            return
+            
+        if 'registry_id' not in self.test_data:
+            self.log_result("Admin Get Registry", False, "Missing registry_id from previous tests")
             return
         
         # Set auth header for admin user
@@ -410,8 +414,12 @@ class RestoredEndpointsTester:
         """Test 9: As admin, GET /api/registries/{id}/contributions returns list"""
         print("\n=== Test 9: Admin Get Contributions ===")
         
-        if 'admin_token' not in self.test_data or 'registry_id' not in self.test_data:
-            self.log_result("Admin Get Contributions", False, "Missing admin_token or registry_id from previous tests")
+        if 'admin_token' not in self.test_data:
+            self.log_result("Admin Get Contributions", False, "Admin token not available - skipping admin test")
+            return
+            
+        if 'registry_id' not in self.test_data:
+            self.log_result("Admin Get Contributions", False, "Missing registry_id from previous tests")
             return
         
         try:
@@ -444,8 +452,12 @@ class RestoredEndpointsTester:
         """Test 10: As admin, GET /api/registries/{id}/audit returns audit entries"""
         print("\n=== Test 10: Admin Get Audit Logs ===")
         
-        if 'admin_token' not in self.test_data or 'registry_id' not in self.test_data:
-            self.log_result("Admin Get Audit", False, "Missing admin_token or registry_id from previous tests")
+        if 'admin_token' not in self.test_data:
+            self.log_result("Admin Get Audit", False, "Admin token not available - skipping admin test")
+            return
+            
+        if 'registry_id' not in self.test_data:
+            self.log_result("Admin Get Audit", False, "Missing registry_id from previous tests")
             return
         
         try:
@@ -475,8 +487,12 @@ class RestoredEndpointsTester:
         """Test 11: Lock registry via admin"""
         print("\n=== Test 11: Admin Lock Registry ===")
         
-        if 'admin_token' not in self.test_data or 'registry_id' not in self.test_data:
-            self.log_result("Admin Lock Registry", False, "Missing admin_token or registry_id from previous tests")
+        if 'admin_token' not in self.test_data:
+            self.log_result("Admin Lock Registry", False, "Admin token not available - skipping admin test")
+            return
+            
+        if 'registry_id' not in self.test_data:
+            self.log_result("Admin Lock Registry", False, "Missing registry_id from previous tests")
             return
         
         lock_data = {
@@ -491,6 +507,7 @@ class RestoredEndpointsTester:
                 data = response.json()
                 
                 if data.get('ok') == True:
+                    self.test_data['registry_locked'] = True
                     self.log_result("Admin Lock Registry", True, "Registry locked successfully")
                 else:
                     self.log_result("Admin Lock Registry", False, f"Expected ok=True, got: {data}")
@@ -506,6 +523,10 @@ class RestoredEndpointsTester:
         
         if 'user_token' not in self.test_data or 'registry_id' not in self.test_data:
             self.log_result("Owner PUT 423", False, "Missing user_token or registry_id from previous tests")
+            return
+        
+        if not self.test_data.get('registry_locked', False):
+            self.log_result("Owner PUT 423", False, "Registry was not locked in previous test - skipping")
             return
         
         # Switch back to normal user token
@@ -534,6 +555,10 @@ class RestoredEndpointsTester:
             self.log_result("Funds Upsert 423", False, "Missing user_token or registry_id from previous tests")
             return
         
+        if not self.test_data.get('registry_locked', False):
+            self.log_result("Funds Upsert 423", False, "Registry was not locked in previous test - skipping")
+            return
+        
         funds_data = {
             "funds": [
                 {
@@ -560,8 +585,16 @@ class RestoredEndpointsTester:
         """Test 14: Unlock registry via admin"""
         print("\n=== Test 14: Admin Unlock Registry ===")
         
-        if 'admin_token' not in self.test_data or 'registry_id' not in self.test_data:
-            self.log_result("Admin Unlock Registry", False, "Missing admin_token or registry_id from previous tests")
+        if 'admin_token' not in self.test_data:
+            self.log_result("Admin Unlock Registry", False, "Admin token not available - skipping admin test")
+            return
+            
+        if 'registry_id' not in self.test_data:
+            self.log_result("Admin Unlock Registry", False, "Missing registry_id from previous tests")
+            return
+        
+        if not self.test_data.get('registry_locked', False):
+            self.log_result("Admin Unlock Registry", False, "Registry was not locked in previous test - skipping")
             return
         
         # Switch back to admin token
@@ -579,6 +612,7 @@ class RestoredEndpointsTester:
                 data = response.json()
                 
                 if data.get('ok') == True:
+                    self.test_data['registry_locked'] = False
                     self.log_result("Admin Unlock Registry", True, "Registry unlocked successfully")
                 else:
                     self.log_result("Admin Unlock Registry", False, f"Expected ok=True, got: {data}")
