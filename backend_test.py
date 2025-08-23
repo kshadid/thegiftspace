@@ -377,9 +377,77 @@ class RestoredEndpointsTester:
         else:
             self.log_result("Create Contributions", False, f"Expected {len(contributions_data)} contributions, created {created_contributions}")
     
-    def test_8_admin_get_registry_detail(self):
-        """Test 8: As admin, GET /api/registries/{id} works"""
-        print("\n=== Test 8: Admin Get Registry Detail ===")
+    def test_8_owner_get_contributions(self):
+        """Test 8: As owner, GET /api/registries/{id}/contributions returns list"""
+        print("\n=== Test 8: Owner Get Contributions ===")
+        
+        if 'user_token' not in self.test_data or 'registry_id' not in self.test_data:
+            self.log_result("Owner Get Contributions", False, "Missing user_token or registry_id from previous tests")
+            return
+        
+        # Set auth header for normal user (owner)
+        self.set_auth_header(self.test_data['user_token'])
+        
+        try:
+            response = self.session.get(f"{API_BASE}/registries/{self.test_data['registry_id']}/contributions")
+            
+            if response.status_code == 200:
+                contributions = response.json()
+                
+                if isinstance(contributions, list) and len(contributions) >= 3:
+                    # Verify contribution structure
+                    valid_contributions = 0
+                    for contrib in contributions:
+                        if ('id' in contrib and 'fund_id' in contrib and 
+                            'amount' in contrib and 'created_at' in contrib):
+                            valid_contributions += 1
+                    
+                    if valid_contributions >= 3:
+                        self.log_result("Owner Get Contributions", True, f"Owner can access {len(contributions)} contributions")
+                    else:
+                        self.log_result("Owner Get Contributions", False, f"Only {valid_contributions} valid contributions out of {len(contributions)}")
+                else:
+                    self.log_result("Owner Get Contributions", False, f"Expected at least 3 contributions, got: {len(contributions) if isinstance(contributions, list) else 'not a list'}")
+            else:
+                self.log_result("Owner Get Contributions", False, f"Expected 200, got {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_result("Owner Get Contributions", False, f"Exception: {str(e)}")
+    
+    def test_9_owner_get_audit_logs(self):
+        """Test 9: As owner, GET /api/registries/{id}/audit returns audit entries"""
+        print("\n=== Test 9: Owner Get Audit Logs ===")
+        
+        if 'user_token' not in self.test_data or 'registry_id' not in self.test_data:
+            self.log_result("Owner Get Audit", False, "Missing user_token or registry_id from previous tests")
+            return
+        
+        try:
+            response = self.session.get(f"{API_BASE}/registries/{self.test_data['registry_id']}/audit")
+            
+            if response.status_code == 200:
+                audit_logs = response.json()
+                
+                if isinstance(audit_logs, list):
+                    # Verify audit log structure
+                    valid_logs = 0
+                    for log in audit_logs:
+                        if ('id' in log and 'registry_id' in log and 
+                            'action' in log and 'created_at' in log):
+                            valid_logs += 1
+                    
+                    self.log_result("Owner Get Audit", True, f"Owner can access {len(audit_logs)} audit logs ({valid_logs} valid)")
+                else:
+                    self.log_result("Owner Get Audit", False, f"Expected list, got: {type(audit_logs)}")
+            else:
+                self.log_result("Owner Get Audit", False, f"Expected 200, got {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_result("Owner Get Audit", False, f"Exception: {str(e)}")
+    
+    def test_10_admin_get_registry_detail(self):
+        """Test 10: As admin, GET /api/registries/{id} works"""
+        print("\n=== Test 10: Admin Get Registry Detail ===")
         
         if 'admin_token' not in self.test_data:
             self.log_result("Admin Get Registry", False, "Admin token not available - skipping admin test")
@@ -410,9 +478,9 @@ class RestoredEndpointsTester:
         except Exception as e:
             self.log_result("Admin Get Registry", False, f"Exception: {str(e)}")
     
-    def test_9_admin_get_contributions(self):
-        """Test 9: As admin, GET /api/registries/{id}/contributions returns list"""
-        print("\n=== Test 9: Admin Get Contributions ===")
+    def test_11_admin_get_contributions(self):
+        """Test 11: As admin, GET /api/registries/{id}/contributions returns list"""
+        print("\n=== Test 11: Admin Get Contributions ===")
         
         if 'admin_token' not in self.test_data:
             self.log_result("Admin Get Contributions", False, "Admin token not available - skipping admin test")
@@ -448,9 +516,9 @@ class RestoredEndpointsTester:
         except Exception as e:
             self.log_result("Admin Get Contributions", False, f"Exception: {str(e)}")
     
-    def test_10_admin_get_audit_logs(self):
-        """Test 10: As admin, GET /api/registries/{id}/audit returns audit entries"""
-        print("\n=== Test 10: Admin Get Audit Logs ===")
+    def test_12_admin_get_audit_logs(self):
+        """Test 12: As admin, GET /api/registries/{id}/audit returns audit entries"""
+        print("\n=== Test 12: Admin Get Audit Logs ===")
         
         if 'admin_token' not in self.test_data:
             self.log_result("Admin Get Audit", False, "Admin token not available - skipping admin test")
@@ -483,9 +551,9 @@ class RestoredEndpointsTester:
         except Exception as e:
             self.log_result("Admin Get Audit", False, f"Exception: {str(e)}")
     
-    def test_11_admin_lock_registry(self):
-        """Test 11: Lock registry via admin"""
-        print("\n=== Test 11: Admin Lock Registry ===")
+    def test_13_admin_lock_registry(self):
+        """Test 13: Lock registry via admin"""
+        print("\n=== Test 13: Admin Lock Registry ===")
         
         if 'admin_token' not in self.test_data:
             self.log_result("Admin Lock Registry", False, "Admin token not available - skipping admin test")
@@ -517,9 +585,9 @@ class RestoredEndpointsTester:
         except Exception as e:
             self.log_result("Admin Lock Registry", False, f"Exception: {str(e)}")
     
-    def test_12_verify_owner_put_returns_423(self):
-        """Test 12: Verify owner PUT returns 423 when registry is locked"""
-        print("\n=== Test 12: Verify Owner PUT Returns 423 ===")
+    def test_14_verify_owner_put_returns_423(self):
+        """Test 14: Verify owner PUT returns 423 when registry is locked"""
+        print("\n=== Test 14: Verify Owner PUT Returns 423 ===")
         
         if 'user_token' not in self.test_data or 'registry_id' not in self.test_data:
             self.log_result("Owner PUT 423", False, "Missing user_token or registry_id from previous tests")
@@ -547,9 +615,9 @@ class RestoredEndpointsTester:
         except Exception as e:
             self.log_result("Owner PUT 423", False, f"Exception: {str(e)}")
     
-    def test_13_verify_funds_upsert_returns_423(self):
-        """Test 13: Verify funds upsert returns 423 when registry is locked"""
-        print("\n=== Test 13: Verify Funds Upsert Returns 423 ===")
+    def test_15_verify_funds_upsert_returns_423(self):
+        """Test 15: Verify funds upsert returns 423 when registry is locked"""
+        print("\n=== Test 15: Verify Funds Upsert Returns 423 ===")
         
         if 'user_token' not in self.test_data or 'registry_id' not in self.test_data:
             self.log_result("Funds Upsert 423", False, "Missing user_token or registry_id from previous tests")
@@ -581,9 +649,9 @@ class RestoredEndpointsTester:
         except Exception as e:
             self.log_result("Funds Upsert 423", False, f"Exception: {str(e)}")
     
-    def test_14_admin_unlock_registry(self):
-        """Test 14: Unlock registry via admin"""
-        print("\n=== Test 14: Admin Unlock Registry ===")
+    def test_16_admin_unlock_registry(self):
+        """Test 16: Unlock registry via admin"""
+        print("\n=== Test 16: Admin Unlock Registry ===")
         
         if 'admin_token' not in self.test_data:
             self.log_result("Admin Unlock Registry", False, "Admin token not available - skipping admin test")
@@ -622,9 +690,9 @@ class RestoredEndpointsTester:
         except Exception as e:
             self.log_result("Admin Unlock Registry", False, f"Exception: {str(e)}")
     
-    def test_15_verify_write_works_after_unlock(self):
-        """Test 15: Verify write operations work again after unlock"""
-        print("\n=== Test 15: Verify Write Works After Unlock ===")
+    def test_17_verify_write_works_after_unlock(self):
+        """Test 17: Verify write operations work again after unlock"""
+        print("\n=== Test 17: Verify Write Works After Unlock ===")
         
         if 'user_token' not in self.test_data or 'registry_id' not in self.test_data:
             self.log_result("Write After Unlock", False, "Missing user_token or registry_id from previous tests")
@@ -653,9 +721,9 @@ class RestoredEndpointsTester:
         except Exception as e:
             self.log_result("Write After Unlock", False, f"Exception: {str(e)}")
     
-    def test_16_verify_api_prefix_and_jwt(self):
-        """Test 16: Confirm all routes use /api prefix and JWT"""
-        print("\n=== Test 16: Verify API Prefix and JWT ===")
+    def test_18_verify_api_prefix_and_jwt(self):
+        """Test 18: Confirm all routes use /api prefix and JWT"""
+        print("\n=== Test 18: Verify API Prefix and JWT ===")
         
         # Test that all endpoints use /api prefix
         endpoints_tested = [
