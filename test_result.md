@@ -90,11 +90,14 @@
 ##     file: "/app/backend/server.py"
 ##     stuck_count: 0
 ##     priority: "high"
-##     needs_retesting: true
+##     needs_retesting: false
 ##     status_history:
 ##         -working: true
 ##         -agent: "main"
 ##         -comment: "Added GET /api/admin/metrics returning active_events, active_gifts, average_amount, max_amount (lifetime)."
+##         -working: true
+##         -agent: "testing"
+##         -comment: "TESTED: /api/admin/metrics endpoint working perfectly. Returns correct structure with active_events: 6, active_gifts: 7, average_amount: 561.11, max_amount: 1000.0. All admin endpoints confirmed working with proper authentication and /api prefix."
 ## frontend:
 ##   - task: "Admin Overview + Registry Detail page"
 ##     implemented: true
