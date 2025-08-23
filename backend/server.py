@@ -200,6 +200,203 @@ async def log_audit(registry_id: str, user_id: Optional[str], action: str, meta:
     except Exception:
         logging.exception("Failed to write audit log")
 
+# ===== Email Service =====
+async def send_contribution_receipt(
+    guest_email: str,
+    guest_name: str,
+    amount: float,
+    currency: str,
+    registry_couple_names: str,
+    fund_title: str
+):
+    """Send a receipt email to the guest who made a contribution"""
+    if not RESEND_API_KEY:
+        logging.warning("Resend API key not configured, skipping email sending")
+        return
+    
+    try:
+        subject = f"Thank you for your contribution to {registry_couple_names}"
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Contribution Receipt</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }}
+                .amount {{ font-size: 24px; font-weight: bold; color: #28a745; }}
+                .details {{ background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; }}
+                .footer {{ text-align: center; color: #666; font-size: 14px; margin-top: 30px; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Thank you for your contribution!</h1>
+                    <p>Dear {guest_name},</p>
+                    <p>Thank you for your generous contribution to {registry_couple_names}'s special day.</p>
+                </div>
+                
+                <div class="details">
+                    <h3>Contribution Details:</h3>
+                    <p><strong>Amount:</strong> <span class="amount">{currency} {amount:.2f}</span></p>
+                    <p><strong>Fund:</strong> {fund_title}</p>
+                    <p><strong>Date:</strong> {datetime.now().strftime('%B %d, %Y')}</p>
+                </div>
+                
+                <p>Your thoughtful contribution will help make their dreams come true. They will be so grateful for your generosity!</p>
+                
+                <div class="footer">
+                    <p>This is an automated receipt for your contribution.</p>
+                    <p>Thank you for using our wedding registry service.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        text_content = f"""
+        Thank you for your contribution!
+        
+        Dear {guest_name},
+        
+        Thank you for your generous contribution to {registry_couple_names}'s special day.
+        
+        Contribution Details:
+        Amount: {currency} {amount:.2f}
+        Fund: {fund_title}
+        Date: {datetime.now().strftime('%B %d, %Y')}
+        
+        Your thoughtful contribution will help make their dreams come true. They will be so grateful for your generosity!
+        
+        This is an automated receipt for your contribution.
+        Thank you for using our wedding registry service.
+        """
+        
+        params = {
+            "from": FROM_EMAIL,
+            "to": [guest_email],
+            "subject": subject,
+            "html": html_content,
+            "text": text_content,
+        }
+        
+        email = resend.Emails.send(params)
+        logging.info(f"Receipt email sent to {guest_email}, email_id: {email.get('id', 'unknown')}")
+        return email
+        
+    except Exception as e:
+        logging.error(f"Failed to send receipt email to {guest_email}: {str(e)}")
+        return None
+
+async def send_owner_notification(
+    owner_email: str,
+    owner_name: str,
+    guest_name: str,
+    amount: float,
+    currency: str,
+    fund_title: str,
+    message: Optional[str] = None
+):
+    """Send a notification email to the registry owner about a new contribution"""
+    if not RESEND_API_KEY:
+        logging.warning("Resend API key not configured, skipping email sending")
+        return
+    
+    try:
+        subject = f"New contribution received: {currency} {amount:.2f}"
+        
+        message_section = ""
+        if message:
+            message_section = f"""
+            <div class="message">
+                <h4>Message from {guest_name}:</h4>
+                <p style="font-style: italic; background: #f8f9fa; padding: 15px; border-left: 4px solid #007bff; margin: 10px 0;">"{message}"</p>
+            </div>
+            """
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>New Contribution Received</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: #007bff; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }}
+                .amount {{ font-size: 24px; font-weight: bold; color: #28a745; }}
+                .details {{ background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; }}
+                .footer {{ text-align: center; color: #666; font-size: 14px; margin-top: 30px; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>🎉 New Contribution Received!</h1>
+                    <p>Hello {owner_name},</p>
+                    <p>Great news! You've received a new contribution for your registry.</p>
+                </div>
+                
+                <div class="details">
+                    <h3>Contribution Details:</h3>
+                    <p><strong>From:</strong> {guest_name}</p>
+                    <p><strong>Amount:</strong> <span class="amount">{currency} {amount:.2f}</span></p>
+                    <p><strong>Fund:</strong> {fund_title}</p>
+                    <p><strong>Date:</strong> {datetime.now().strftime('%B %d, %Y at %I:%M %p')}</p>
+                </div>
+                
+                {message_section}
+                
+                <p>This contribution brings you one step closer to your special day goals!</p>
+                
+                <div class="footer">
+                    <p>Log in to your registry dashboard to see more details and track your progress.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        text_content = f"""
+        New Contribution Received!
+        
+        Hello {owner_name},
+        
+        Great news! You've received a new contribution for your registry.
+        
+        Contribution Details:
+        From: {guest_name}
+        Amount: {currency} {amount:.2f}
+        Fund: {fund_title}
+        Date: {datetime.now().strftime('%B %d, %Y at %I:%M %p')}
+        
+        {f'Message from {guest_name}: "{message}"' if message else ''}
+        
+        This contribution brings you one step closer to your special day goals!
+        
+        Log in to your registry dashboard to see more details and track your progress.
+        """
+        
+        params = {
+            "from": FROM_EMAIL,
+            "to": [owner_email],
+            "subject": subject,
+            "html": html_content,
+            "text": text_content,
+        }
+        
+        email = resend.Emails.send(params)
+        logging.info(f"Owner notification email sent to {owner_email}, email_id: {email.get('id', 'unknown')}")
+        return email
+        
+    except Exception as e:
+        logging.error(f"Failed to send owner notification email to {owner_email}: {str(e)}")
+        return None
+
 # ===== Auth helpers =====
 async def find_user_by_email(email: str) -> Optional[dict]:
     return await db.users.find_one({"email": email.lower()})
