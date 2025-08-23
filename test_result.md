@@ -98,11 +98,14 @@
 ##     file: "/app/backend/server.py"
 ##     stuck_count: 0
 ##     priority: "high"
-##     needs_retesting: true
+##     needs_retesting: false
 ##     status_history:
 ##         -working: true
 ##         -agent: "main"
 ##         -comment: "Implemented user collection, password hashing, JWT; owner-only routes enforced."
+##         -working: true
+##         -agent: "testing"
+##         -comment: "COMPREHENSIVE JWT AUTH TESTING COMPLETED: ✅ POST /api/auth/register returns token+user (201), ✅ GET /api/auth/me with Bearer token returns same user (200), ✅ POST /api/auth/login returns token+user (200). All auth endpoints working perfectly."
 ## frontend:
 ##   - task: "Landing + Create + Public with mock data"
 ##     implemented: true
