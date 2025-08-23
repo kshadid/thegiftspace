@@ -470,16 +470,6 @@ export default function CreateRegistry() {
                               </label>
                             </div>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2">
-                              <Switch id={`pin-${f.id}`} checked={!!f.pinned} onCheckedChange={(v) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, pinned: !!v } : x)))} />
-                              <Label htmlFor={`pin-${f.id}`}>Pinned</Label>
-                            </div>
-                            <label className="inline-flex items-center gap-1 text-xs border rounded px-2 py-1 cursor-pointer ml-auto">
-                              <UploadIcon className="size-3"/> Image
-                              <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && uploadFundImage(f.id, e.target.files[0])} />
-                            </label>
-                          </div>
                           <div className="flex items-center justify-between pt-2">
                             <div className="text-xs text-muted-foreground">Order: {f.order ?? 0}</div>
                             <Button variant="secondary" onClick={saveAll}>Save</Button>
