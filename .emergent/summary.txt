@@ -1,0 +1,114 @@
+<analysis>
+The AI engineer successfully progressed from an initial frontend mock to a feature-rich, full-stack application for a wedding cash registry. The development followed a clear iterative process: initial frontend mock, backend integration with authentication, and then adding advanced features like analytics, file uploads, themes, and collaboration. Key decisions included using React with Shadcn for UI, FastAPI for the backend, and MongoDB for data persistence. The AI adapted to user feedback, deferring payments and emails, while prioritizing a full account system and edge features to enhance the product. Automated testing was regularly employed to ensure functionality. The current state is a robust platform with advanced owner features and a polished public interface, ready for further refinement.
+</analysis>
+
+<product_requirements>
+The primary goal is to clone hitchd.com with a specific focus on the wedding registry element, particularly cash funds that can go towards specific gifts or general funds. The application needs to be pixel-perfect in design, layout, and structure, matching the original's feel but using different images, exact fonts, and colors. The initial locale is Dubai, with English-only support, but planning for global launch. A full account system (JWT auth) for couples to manage their registries is required.
+
+Key features implemented include:
+*   **Registry Creation & Management**: Couples can create, update, and manage their wedding registries, including names, date, location (default Dubai, AED currency), hero image, and a unique public slug.
+*   **Fund Management**: Add, edit, remove, reorder, duplicate, and set visibility for individual cash funds with titles, descriptions, goals, categories, and cover images. Bulk actions for funds.
+*   **Public Registry**: A public-facing page () displaying the couple's details, total amount raised, individual fund progress, and a contribution modal. Optional pinned gift highlighted.
+*   **Contributions**: Guests can contribute via a modal (payments currently mocked, but contributions persist in DB).
+*   **Authentication**: Full JWT-based user accounts (Register, Login, Me) with protected routes for registry owners.
+*   **Analytics & Reporting**: Owner-only dashboard with analytics (totals, count, average gift, top funds, daily series) and CSV export for contributions.
+*   **Collaborators**: Owners can add/remove co-owners by email, granting full edit rights to the registry.
+*   **Theming**: Four tasteful theme presets (Modern, Minimal Serif, Elegant Pastel, Dark Elegant) for registry customization with instant preview.
+*   **Image Uploads**: Chunked, resumable file uploads with progress indicators for hero and fund images.
+*   **UI/UX Enhancements**: Drag-and-drop reordering for funds, bulk actions, duplicate fund, pinned toggle, empty-state guidance, smooth scroll on public page, OG tags for sharing.
+</product_requirements>
+
+<key_technical_concepts>
+-   **Full-stack Architecture**: React frontend, FastAPI backend, MongoDB database.
+-   **State Management**: React Context for authentication, localStorage for frontend mock data.
+-   **UI Library**: Shadcn UI components for a modern design.
+-   **Icon Library**: Lucide-React for vector icons.
+-   **API Integration**: Axios for frontend-backend communication,  prefix for all backend routes.
+-   **Authentication**: JWT (JSON Web Tokens) for user authentication and authorization.
+-   **Data Persistence**: MongoDB for storing registries, funds, contributions, users.
+-   **File Storage**: Chunked file uploads with backend endpoints for processing and serving.
+-   **Environment Variables**:  files for , , , .
+-   **Deployment**: Supervisor for service control, Kubernetes Ingress rules for routing.
+</key_technical_concepts>
+
+<code_architecture>
+
+
+
+-   ****:
+    -   **Importance**: This is the core FastAPI backend application. It defines all API endpoints, database interactions, business logic, authentication, and file upload handling.
+    -   **Changes**:
+        -   Initial setup with  and  endpoints.
+        -   Added MongoDB connection,  with  prefix, .
+        -   Defined Pydantic models for , , , , , .
+        -   Implemented CRUD for registries, funds (including bulk upsert, reordering, visibility), and contributions.
+        -   Implemented JWT authentication (, , ), password hashing, and token generation.
+        -   Added endpoints for analytics (), CSV export (), and file uploads (, ).
+        -   Integrated unique DB indexes for users and registries.
+        -   Implemented rate limiting for auth endpoints.
+        -   Added email sending stub (using SendGrid if configured).
+
+-   ****:
+    -   **Importance**: The main React application file, responsible for routing and global context.
+    -   **Changes**:
+        -   Switched from a single  component to  with multiple s for , , , .
+        -   Integrated  for global authentication context.
+        -   Removed initial  call.
+
+-   ****:
+    -   **Importance**: Global CSS, including TailwindCSS directives and custom properties for theming.
+    -   **Changes**: Defined base layers for Tailwind and custom CSS variables for color themes (light/dark mode, chart colors). Applied visually identical font/color sets.
+
+-   ****:
+    -   **Importance**: Documents API contracts, mocked data, backend implementation plans, and frontend-backend integration strategy. Acts as a protocol for development.
+    -   **Changes**: Evolved from an initial outline to a comprehensive spec detailing models (Registry, Fund, Contribution, User), endpoints (auth, CRUD, analytics, exports, uploads), validation, error handling, and data structures.
+
+-   ****:
+    -   **Importance**: Stores all mock data used by the frontend before backend integration.
+    -   **Changes**: Created to provide sample registry data, fund data, and user data for the frontend-only mock. Later used as a fallback or for initial rendering.
+
+-   ****:
+    -   **Importance**: Handles user registration and login functionality.
+    -   **Changes**: Implemented forms for signup and login, integrating with backend JWT auth endpoints, and handling successful authentication with context. Fixed submission handlers.
+
+-   ****:
+    -   **Importance**: The primary dashboard for registry owners to manage their registry, funds, analytics, settings (themes, collaborators).
+    -   **Changes**: Developed to include forms for registry details, fund management (CRUD, reorder, visibility, duplicate, bulk actions, image upload), analytics display, theme selection, and collaborator management.
+
+-   ****:
+    -   **Importance**: Displays the public view of a wedding registry.
+    -   **Changes**: Implemented dynamic fetching of registry and fund data by slug, display of raised amounts, fund progress bars, contribution modal, pinned gift highlight, and OG tags for social sharing.
+
+-   ** (New file)**:
+    -   **Importance**: Provides authentication context (user, token, login/logout functions) across the React application.
+    -   **Changes**: Created to wrap the application, manage user state from JWT, and protect routes.
+
+</code_architecture>
+
+<pending_tasks>
+-   **Payments Integration**: User will provide integration documents for a specific payment platform later.
+-   **Email Functionality**: Emails (guest receipts, owner notifications) are currently deferred.
+-   **Advanced Analytics**: Richer analytics, cohort analysis, forecast to goal, channel attribution.
+-   **Multi-language Skeleton**: Localization structure for future languages (e.g., Arabic, French).
+-   **Access Logs**: Simple audit of collaborator actions for transparency.
+-   **Dashboard Polish v2**: Inline goal editing, quick pin/visibility chips, keyboard reordering for funds.
+-   **Public Page Filters**: Category filters and quick-search within gifts.
+</pending_tasks>
+
+<current_work>
+The product is a functional, full-stack wedding cash registry application, closely mirroring the Hitchd concept. It allows couples to create and manage their registries with a full account system (JWT authentication, register/login/me). Key features include:
+
+*   **Registry & Fund Management**: Owners can define registry details (names, date, location, slug), and manage cash funds with titles, descriptions, goals, categories, and cover images. This includes drag-and-drop reordering, bulk actions (select, show/hide, delete), duplicating funds, and pinning funds.
+*   **Public Display**: A public registry page () showcases the couple's details, aggregated amounts raised, and individual fund progress. It features an optional pinned gift highlighted prominently and smooth scrolling to the gift section. OG tags are dynamically generated for improved social sharing.
+*   **Image Uploads**: Integrated chunked file uploads with progress indicators for both the hero image and individual fund images. Files are stored and served by the backend.
+*   **Analytics & Reporting**: Owners have an analytics dashboard displaying total raised, contribution count, average gift size, top funds, and a 30-day mini-series. They can also export contributions as a CSV.
+*   **Collaboration**: Registry owners can add or remove collaborators (co-owners) by email, who then gain full editing rights to the specific registry.
+*   **Theming**: Four theme presets (Modern, Minimal Serif, Elegant Pastel, Dark Elegant) can be applied by the owner, which affect the public hero overlay and text.
+*   **Hardening**: Unique database indexes (users.email, registries.slug) ensure data integrity, and rate limiting is applied to authentication endpoints. Uploads are capped at 20MB and enforced to be image types.
+
+Payments are currently mocked in the UI, but contributions are recorded in the MongoDB backend. Email notifications are deferred. The application adheres to all specified environment and URL rules, using  prefixes, , and . Visually identical fonts (Inter) and colors have been applied to match the desired aesthetic. The application is functional and has passed extensive automated backend and frontend E2E tests, verifying the end-to-end flow from signup to contribution.
+</current_work>
+
+<optional_next_step>
+The next steps involve refining the owner dashboard and adding public page filters.
+</optional_next_step>
