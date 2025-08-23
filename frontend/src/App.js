@@ -6,6 +6,7 @@ import RegistryLanding from "./pages/RegistryLanding";
 import CreateRegistry from "./pages/CreateRegistry";
 import PublicRegistry from "./pages/PublicRegistry";
 import AuthPage from "./pages/Auth";
+import Dashboard from "./pages/Dashboard";
 import { Toaster } from "./components/ui/toaster";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
@@ -32,6 +33,7 @@ function App() {
           <Routes>
             <Route path="/" element={<RegistryLanding />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
             <Route path="/create" element={<Protected><CreateRegistry /></Protected>} />
             <Route path="/r/:slug" element={<PublicRegistry />} />
             <Route path="*" element={<NotFound />} />

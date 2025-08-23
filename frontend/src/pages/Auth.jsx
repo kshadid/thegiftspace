@@ -19,7 +19,7 @@ export default function AuthPage() {
     try {
       setLoading(true);
       await login(email, password);
-      navigate("/create");
+      navigate("/dashboard");
     } catch (e) {
       toast({ title: "Login failed", description: e?.response?.data?.detail || e?.message || "Please try again." });
     } finally {
@@ -31,7 +31,7 @@ export default function AuthPage() {
     try {
       setLoading(true);
       await register(name, email, password);
-      navigate("/create");
+      navigate("/dashboard");
     } catch (e) {
       toast({ title: "Signup failed", description: e?.response?.data?.detail || e?.message || "Please try again." });
     } finally {

@@ -45,6 +45,10 @@ export async function getRegistryById(registryId) {
   const { data } = await api.get(`/registries/${registryId}`);
   return data;
 }
+export async function listMyRegistries() {
+  const { data } = await api.get(`/registries/mine`);
+  return data;
+}
 export async function bulkUpsertFunds(registryId, funds) {
   const { data } = await api.post(`/registries/${registryId}/funds/bulk_upsert`, { funds });
   return data;

@@ -292,6 +292,14 @@ async def get_registry(registry_id: str, current: UserPublic = Depends(get_user_
     reg.pop("_id", None)
     return Registry(**reg)
 
+@api_router.get("/registries/mine", response_model=List[Registry])
+async def list_my_registries(current: UserPublic = Depends(get_user_from_token)):
+    cursor = db.registries.find({"$or": [{"owner_id": current.id}, {"collaborators": {"$in": [current.id]}}]}).sort("updated_at", -1)
+    items = await cursor.to_list(100)
+    for it in items:
+        it.pop("_id", None)
+    return [Registry(**it) for it in items]
+
 @api_router.get("/registries/{slug}/public", response_model=PublicRegistryResponse)
 async def get_registry_public(slug: str):
     reg_doc = await db.registries.find_one({"slug": slug})
