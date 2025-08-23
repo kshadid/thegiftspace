@@ -43,6 +43,51 @@ export default function CreateRegistry() {
   const [fundUploading, setFundUploading] = React.useState({});
   const [selected, setSelected] = React.useState({});
   const dragId = React.useRef(null);
+  const [editingGoalId, setEditingGoalId] = React.useState(null);
+  const [goalDraft, setGoalDraft] = React.useState("");
+
+  const silentCloudSave = async () => {
+    try {
+      await syncToBackend();
+    } catch (_) {
+      // ignore cloud errors for quick actions
+    }
+  };
+
+  const moveFund = (id, delta) => {
+    setFunds((all) => {
+      const idx = all.findIndex((x) => x.id === id);
+      if (idx === -1) return all;
+      const to = Math.max(0, Math.min(all.length - 1, idx + delta));
+      if (to === idx) return all;
+      const clone = [...all];
+      const [moved] = clone.splice(idx, 1);
+      clone.splice(to, 0, moved);
+      return clone.map((x, i) => ({ ...x, order: i }));
+    });
+  };
+  const moveFundUp = (id) => moveFund(id, -1);
+  const moveFundDown = (id) => moveFund(id, 1);
+
+  const togglePinQuick = (id) => {
+    setFunds((all) => all.map((x) => (x.id === id ? { ...x, pinned: !x.pinned } : x)));
+    silentCloudSave();
+  };
+  const toggleVisibleQuick = (id) => {
+    setFunds((all) => all.map((x) => (x.id === id ? { ...x, visible: !(x.visible !== false ? true : false) } : x)));
+    silentCloudSave();
+  };
+
+  const startEditGoal = (fund) => {
+    setEditingGoalId(fund.id);
+    setGoalDraft(String(fund.goal ?? 0));
+  };
+  const commitGoal = (id) => {
+    setFunds((all) => all.map((x) => (x.id === id ? { ...x, goal: Number(goalDraft || 0) } : x)));
+    setEditingGoalId(null);
+    silentCloudSave();
+  };
+  const cancelGoal = () => setEditingGoalId(null);
 
   const updateRegistry = (patch) => setRegistry((r) => ({ ...r, ...patch }));
 
