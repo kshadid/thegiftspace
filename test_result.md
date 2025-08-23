@@ -176,3 +176,5 @@
 ## agent_communication:
 ##     -agent: "main"
 ##     -message: "Proceed with automated frontend testing now. Use http://localhost:3000. Ensure /create redirects to /auth when unauthenticated, then full happy path."
+##     -agent: "testing"
+##     -message: "E2E testing completed. CRITICAL ISSUE FOUND: Auth forms (login/signup) are completely non-functional - no network requests are made when submitting forms, preventing user authentication. This blocks the entire authenticated user flow. However, public registry functionality works correctly with proper fallback to mock data. Unauth redirect works properly. Main agent needs to investigate auth form submission handlers."
