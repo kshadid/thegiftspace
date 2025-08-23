@@ -63,14 +63,15 @@ class RestoredEndpointsTester:
         """Test 1: Register admin user (kshadid@gmail.com) and obtain JWT token"""
         print("\n=== Test 1: Register Admin User ===")
         
+        # Use the exact admin email from server.py
         user_data = {
             "name": "Khalid Shadid",
             "email": "kshadid@gmail.com",
-            "password": "AdminSecurePassword123!"
+            "password": "NewAdminPassword123!"
         }
         
         try:
-            # First try to register
+            # First try to register with new password
             response = self.session.post(f"{API_BASE}/auth/register", json=user_data)
             
             if response.status_code == 201:
@@ -91,32 +92,8 @@ class RestoredEndpointsTester:
                 else:
                     self.log_result("Register Admin User", False, f"Missing access_token or user in response: {data}")
             elif response.status_code == 409:
-                # User already exists, try different passwords
-                possible_passwords = [
-                    "AdminSecurePassword123!",
-                    "admin123",
-                    "password123",
-                    "admin",
-                    "123456"
-                ]
-                
-                login_success = False
-                for password in possible_passwords:
-                    login_data = {"email": user_data["email"], "password": password}
-                    login_response = self.session.post(f"{API_BASE}/auth/login", json=login_data)
-                    if login_response.status_code == 200:
-                        data = login_response.json()
-                        token = data['access_token']
-                        user = data['user']
-                        self.test_data['admin_token'] = token
-                        self.test_data['admin_id'] = user['id']
-                        self.test_data['admin_email'] = user['email']
-                        self.log_result("Register Admin User", True, f"Admin logged in (already existed): {user['name']} ({user['email']})")
-                        login_success = True
-                        break
-                
-                if not login_success:
-                    self.log_result("Register Admin User", False, f"Admin exists but couldn't login with any common password")
+                # User already exists, skip admin tests for now and focus on basic functionality
+                self.log_result("Register Admin User", False, f"Admin user already exists with unknown password. Skipping admin tests.")
             else:
                 self.log_result("Register Admin User", False, f"Expected 201, got {response.status_code}: {response.text}")
                 
