@@ -193,6 +193,14 @@ export default function CreateRegistry() {
       await bulkUpsertFunds(regId, payloadFunds);
       return true;
     } catch (e) {
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const rid = params.get("rid");
+    if (rid) {
+      localStorage.setItem("registry_id", rid);
+    }
+  }, [location.search]);
+
       console.log("Sync failed, staying local", e?.message);
       return false;
     }
