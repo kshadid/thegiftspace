@@ -44,7 +44,7 @@
 ## metadata:
 ##   created_by: "main_agent"
 ##   version: "1.0"
-##   test_sequence: 6
+##   test_sequence: 7
 ##   run_ui: true
 ##
 ## test_plan:
