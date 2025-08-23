@@ -158,3 +158,5 @@
 ## agent_communication:
 ##     -agent: "main"
 ##     -message: "Please run backend auth tests: /auth/register, /auth/login, /auth/me, then registry creation and fund upsert with Authorization header; verify public/no-auth still works."
+##     -agent: "testing"
+##     -message: "JWT AUTH TESTING COMPLETE: All 6 test scenarios from review request passed perfectly. ✅ User registration returns token+user, ✅ /auth/me with Bearer token works, ✅ Protected registry creation with owner_id works, ✅ Protected fund bulk upsert works, ✅ Public registry access without auth works, ✅ Public contributions without auth work and increase raised amounts. Backend JWT authentication and protected routes are fully functional. Ready for frontend integration testing."
