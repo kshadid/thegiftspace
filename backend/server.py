@@ -161,8 +161,16 @@ class FundIn(BaseModel):
     order: Optional[int] = None
     pinned: bool = False
 
-class Fund(FundIn):
+class Fund(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    description: Optional[str] = None
+    goal: float = 0
+    cover_url: Optional[str] = None
+    category: Optional[str] = None
+    visible: bool = True
+    order: Optional[int] = None
+    pinned: bool = False
     registry_id: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
