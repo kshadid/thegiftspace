@@ -142,18 +142,6 @@
 ##     file: "/app/backend/server.py"
 ##     stuck_count: 0
 ##     priority: "high"
-##     needs_retesting: true
-##     status_history:
-##         -working: true
-##         -agent: "main"
-##         -comment: "Added GET /api/registries/mine to fetch registries where user is owner or collaborator; sorted by updated_at desc."
-## backend:
-##   - task: "List my registries endpoint"
-##     implemented: true
-##     working: true
-##     file: "/app/backend/server.py"
-##     stuck_count: 0
-##     priority: "high"
 ##     needs_retesting: false
 ##     status_history:
 ##         -working: true
@@ -162,15 +150,18 @@
 ##         -working: true
 ##         -agent: "testing"
 ##         -comment: "Fixed critical routing issue: moved /registries/mine route before /registries/{registry_id} to prevent FastAPI from matching 'mine' as registry_id. All tests passing: JWT auth working, returns registries where user is owner or collaborator, correctly sorted by updated_at descending, collaborator functionality working properly."
+##   - task: "Audit logs (owner/collab view) + dynamic CORS + file cache headers"
+##     implemented: true
+##     working: true
+##     file: "/app/backend/server.py"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: true
+##     status_history:
+##         -working: true
+##         -agent: "main"
+##         -comment: "Added AuditLog model, log writes on registry update/create, funds bulk_upsert, collaborator add/remove, and GET /registries/{id}/audit. Added env-driven CORS allowlist and Cache-Control headers for /api/files."
 
 ## agent_communication:
 ##     -agent: "main"
-##     -message: "Added analytics, CSV export, visibility flag, email stubs with SendGrid support, rate limiting, and DB indexes. Please run backend tests for /analytics and /contributions/export/csv."
-##     -agent: "testing"
-##     -message: "Completed comprehensive backend testing. All major features working: unique indexes (409 for duplicates), analytics endpoint with correct data structure, CSV export with proper headers, visibility flag correctly filtering public API. Rate limiting is implemented but difficult to test in distributed K8s environment where requests come from different proxy IPs."
-##     -agent: "main"
-##     -message: "Added /dashboard route, events listing from /api/registries/mine, create event dialog, quick stats, manage/view actions."
-##     -agent: "testing"
-##     -message: "Completed testing of GET /api/registries/mine endpoint with JWT auth. Fixed critical routing issue where FastAPI was matching 'mine' as a registry_id parameter. All functionality working: user registration, JWT tokens, registry creation, collaborator management, proper sorting by updated_at descending. All routes correctly under /api prefix."
-##     -agent: "testing"
-##     -message: "Completed end-to-end UI testing. Successfully tested: 1) User signup and dashboard redirect, 2) Event creation with proper navigation to /create?rid=<id>, 3) localStorage.registry_id correctly matches URL rid parameter. The Add Gift functionality and gift management features are working as implemented. Dashboard shows analytics blocks and event listing. All major user flows are functional."
+##     -message: "Added backend audit logs + /api/registries/{id}/audit endpoint; dynamic CORS allowlist and Cache-Control headers for images. Please run backend tests for audit flows."

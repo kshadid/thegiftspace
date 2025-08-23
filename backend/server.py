@@ -3,6 +3,7 @@ from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
@@ -59,6 +60,7 @@ async def ensure_indexes():
     await db.contributions.create_index('fund_id')
     await db.contributions.create_index('created_at')
     await db.uploads.create_index('created_at')
+    await db.audit_logs.create_index([('registry_id', 1), ('created_at', -1)])
 
 _rate_store: Dict[str, List[float]] = {}
 
@@ -169,6 +171,23 @@ class PublicRegistryResponse(BaseModel):
     funds: List[Dict[str, Any]]  # Fund + {raised, progress}
     totals: Dict[str, float]
 
+# ===== Audit Log Model =====
+class AuditLog(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    registry_id: str
+    user_id: Optional[str] = None
+    action: str
+    meta: Dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+async def log_audit(registry_id: str, user_id: Optional[str], action: str, meta: Dict[str, Any]):
+    try:
+        entry = AuditLog(registry_id=registry_id, user_id=user_id, action=action, meta=meta)
+        await db.audit_logs.insert_one(entry.model_dump())
+    except Exception:
+        # Do not block core flow on audit failures
+        logging.exception("Failed to write audit log")
+
 # ===== Auth helpers =====
 async def find_user_by_email(email: str) -> Optional[dict]:
     return await db.users.find_one({"email": email.lower()})
@@ -266,6 +285,7 @@ async def create_registry(payload: RegistryCreate, current: UserPublic = Depends
         raise HTTPException(status_code=409, detail="Slug already in use")
     reg = Registry(**payload.model_dump(), owner_id=current.id)
     await db.registries.insert_one(reg.model_dump())
+    await log_audit(reg.id, current.id, "registry.create", {"slug": reg.slug})
     return reg
 
 @api_router.put("/registries/{registry_id}", response_model=Registry)
@@ -278,6 +298,7 @@ async def update_registry(registry_id: str, patch: RegistryUpdate, current: User
     update_doc = {k: v for k, v in patch.model_dump().items() if v is not None}
     update_doc["updated_at"] = datetime.utcnow()
     await db.registries.update_one({"id": registry_id}, {"$set": update_doc})
+    await log_audit(registry_id, current.id, "registry.update", {"fields": list(update_doc.keys())})
     reg.update(update_doc)
     reg.pop("_id", None)
     return Registry(**reg)
@@ -359,6 +380,7 @@ async def bulk_upsert_funds(registry_id: str, body: Dict[str, List[FundIn]], cur
             doc = Fund(**{**data, "registry_id": registry_id, "created_at": now, "updated_at": now})
             await db.funds.insert_one(doc.model_dump())
             created += 1
+    await log_audit(registry_id, current.id, "funds.bulk_upsert", {"created": created, "updated": updated, "count": len(funds_in)})
     return {"created": created, "updated": updated}
 
 @api_router.get("/registries/{registry_id}/funds", response_model=List[Fund])
@@ -516,6 +538,7 @@ async def add_collaborator(registry_id: str, body: CollaboratorAdd, current: Use
     collabs = set(reg.get('collaborators') or [])
     collabs.add(user['id'])
     await db.registries.update_one({"id": registry_id}, {"$set": {"collaborators": list(collabs), "updated_at": datetime.utcnow()}})
+    await log_audit(registry_id, current.id, "collaborator.add", {"email": body.email.lower(), "user_id": user['id']})
     return {"ok": True}
 
 @api_router.delete("/registries/{registry_id}/collaborators/{user_id}")
@@ -529,7 +552,19 @@ async def remove_collaborator(registry_id: str, user_id: str, current: UserPubli
     if user_id in collabs:
         collabs.remove(user_id)
         await db.registries.update_one({"id": registry_id}, {"$set": {"collaborators": list(collabs), "updated_at": datetime.utcnow()}})
+        await log_audit(registry_id, current.id, "collaborator.remove", {"user_id": user_id})
     return {"ok": True}
+
+# --- Audit Logs ---
+@api_router.get("/registries/{registry_id}/audit", response_model=List[AuditLog])
+async def get_audit_logs(registry_id: str, current: UserPublic = Depends(get_user_from_token)):
+    reg = await db.registries.find_one({"id": registry_id})
+    if not reg:
+        raise HTTPException(status_code=404, detail="Registry not found")
+    if not is_owner_or_collab(reg, current.id):
+        raise HTTPException(status_code=403, detail="Not allowed")
+    items = await db.audit_logs.find({"registry_id": registry_id}).sort("created_at", -1).to_list(200)
+    return [AuditLog(**{k: v for k, v in it.items() if k != "_id"}) for it in items]
 
 # --- Chunked Uploads ---
 class UploadInitBody(BaseModel):
@@ -632,13 +667,30 @@ async def complete_upload(body: UploadCompleteBody, current: UserPublic = Depend
 # Include the router in the main app
 app.include_router(api_router)
 
+# Dynamic CORS allowlist (default: *)
+_raw_origins = os.environ.get('CORS_ALLOW_ORIGINS', '*')
+allow_origins = ['*'] if _raw_origins.strip() == '*' else [o.strip() for o in _raw_origins.split(',') if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["*"],
+    allow_origins=allow_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add Cache-Control headers for served files
+class CacheHeaderMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        try:
+            if request.url.path.startswith('/api/files/') and 200 <= response.status_code < 400:
+                response.headers.setdefault('Cache-Control', 'public, max-age=86400, immutable')
+        except Exception:
+            pass
+        return response
+
+app.add_middleware(CacheHeaderMiddleware)
 
 logging.basicConfig(
     level=logging.INFO,
