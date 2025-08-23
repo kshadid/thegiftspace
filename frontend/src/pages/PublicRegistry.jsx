@@ -28,6 +28,10 @@ export default function PublicRegistry() {
   const [query, setQuery] = React.useState("");
   const [activeCat, setActiveCat] = React.useState("All");
 
+    if (!getAccessToken()) {
+      // When unauthenticated, public page may be viewed by guests: no change
+    }
+
   React.useEffect(() => {
     const fetchData = async () => {
       try {
