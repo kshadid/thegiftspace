@@ -157,8 +157,8 @@ export function getWelcomeMessage(user) {
 
 export function getSuccessMessage(action) {
   const messages = {
-    'registry_created': 'Your beautiful registry has been created!',
-    'fund_added': 'New fund has been added successfully!',
+    'registry_created': 'Your beautiful gift registry has been created!',
+    'fund_added': 'New gift fund has been added successfully!',
     'settings_saved': 'Your settings have been saved!'
   };
   
