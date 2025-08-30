@@ -7,8 +7,12 @@
   
   # Environment variables for build
   [build.environment]
-    NODE_VERSION = "20"
+    NODE_VERSION = "20.0.0"
+    YARN_VERSION = "1.22.22"
     NPM_FLAGS = "--legacy-peer-deps"
+    YARN_FLAGS = "--legacy-peer-deps"
+    CI = "true"
+    GENERATE_SOURCEMAP = "false"
 
 # SPA routing configuration
 [[redirects]]
