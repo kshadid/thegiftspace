@@ -69,6 +69,27 @@ function LandingPage() {
               Create beautiful gift funds for your special day. Let friends and 
               family give meaningful gifts toward your dream honeymoon and future together.
             </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-start items-start">
+              <a 
+                href="/auth" 
+                className="bg-blue-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl"
+              >
+                {PROFESSIONAL_COPY.hero.cta}
+              </a>
+              <a 
+                href="#features" 
+                className="text-slate-200 hover:text-white font-medium flex items-center gap-2"
+              >
+                Learn More
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Features Section */}
       <div id="features" className="py-24 bg-white">
