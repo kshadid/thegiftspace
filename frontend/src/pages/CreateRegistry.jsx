@@ -21,13 +21,12 @@ import { getAccessToken } from "../lib/api";
 import { Plus, Trash2, Eye, EyeOff, ArrowDownToLine, GripVertical, UserPlus, X, Upload as UploadIcon, Copy, Pin, ChevronUp, ChevronDown, Cog } from "lucide-react";
 import { createRegistry as apiCreateRegistry, updateRegistry as apiUpdateRegistry, bulkUpsertFunds, getRegistryAnalytics, exportRegistryCSV, getRegistryById, addCollaborator, removeCollaborator } from "../lib/api";
 import { uploadFileChunked } from "../lib/uploads";
+import { PROFESSIONAL_COPY, getRandomFundSuggestion } from "../utils/professionalCopy";
+import { DEFAULT_REGISTRY_IMAGES, getRandomImageByCategory, getRandomRegistryImage } from "../utils/defaultImages";
+import ImageSelector from "../components/ImageSelector";
 
-const heroPresets = [
-  "https://images.unsplash.com/photo-1520440718111-45fe694b330a?q=80&w=1920&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1920&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1920&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1491553895911-0055eca6402d?q=80&w=1920&auto=format&fit=crop",
-];
+// Use our beautiful curated images instead of random ones
+const heroPresets = DEFAULT_REGISTRY_IMAGES.map(img => img.url);
 
 export default function CreateRegistry() {
   const navigate = useNavigate();
