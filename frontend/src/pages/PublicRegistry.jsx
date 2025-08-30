@@ -146,9 +146,9 @@ export default function PublicRegistry() {
       {/* Header */}
       <div className="bg-white/90 backdrop-blur-sm border-b sticky top-0 z-40 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <a href="/" className="font-semibold text-lg text-blue-600">
+          <Link to="/" className="font-semibold text-lg text-blue-600">
             The giftspace
-          </a>
+          </Link>
         </div>
       </div>
 
