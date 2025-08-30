@@ -1,18 +1,20 @@
 [build]
-  # Build command
-  command = "cd frontend && yarn install --legacy-peer-deps && yarn build"
+  # Build command - use Node 20 for compatibility
+  command = "cd frontend && npm ci --legacy-peer-deps && npm run build"
   
   # Publish directory
   publish = "frontend/build"
   
+  # Build context
+  base = "/"
+  
   # Environment variables for build
   [build.environment]
-    NODE_VERSION = "20.0.0"
-    YARN_VERSION = "1.22.22"
-    NPM_FLAGS = "--legacy-peer-deps"
-    YARN_FLAGS = "--legacy-peer-deps"
+    NODE_VERSION = "20.11.0"
+    NPM_VERSION = "10.2.4"
     CI = "true"
     GENERATE_SOURCEMAP = "false"
+    REACT_APP_BACKEND_URL = "https://wedwallet.preview.emergentagent.com"
 
 # SPA routing configuration
 [[redirects]]
