@@ -72,7 +72,7 @@ class AuthenticationTester:
     
     def verify_user_in_database(self, email):
         """Directly check if user exists in MongoDB"""
-        if not self.db:
+        if self.db is None:
             return None, "No database connection"
         
         try:
