@@ -100,7 +100,7 @@ export default function CreateRegistry() {
           location: registry.location,
           currency: registry.currency || DEFAULT_CURRENCY,
           hero_image: registry.heroImage,
-          slug: (registry.slug || "amir-leila").toLowerCase(),
+          slug: (registry.slug || "our-wedding").toLowerCase(),
           theme: registry.theme || "modern",
         });
         regId = created.id;
