@@ -55,12 +55,12 @@ export function saveFunds(funds) {
 
 // Professional fund suggestions based on category
 export function getFundSuggestions(category = 'general') {
-  const suggestions = PROFESSIONAL_COPY.funds.suggestions[category] || PROFESSIONAL_COPY.funds.suggestions.general;
-  return suggestions.map((title, index) => ({
+  const categoryFunds = PROFESSIONAL_COPY.funds[category] || PROFESSIONAL_COPY.funds.general;
+  return categoryFunds.map((fund, index) => ({
     id: `suggestion_${category}_${index}`,
-    title,
-    description: `${title} - help us create unforgettable memories together`,
-    goal: category === 'honeymoon' ? 8000 : category === 'home' ? 5000 : 3000,
+    title: fund.title,
+    description: fund.description,
+    goal: fund.goal,
     category: category,
     cover_url: getRandomImageByCategory(category).url,
     visible: true,
