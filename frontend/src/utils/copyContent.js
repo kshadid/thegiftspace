@@ -65,18 +65,18 @@ export const PROFESSIONAL_COPY = {
     experience: [
       {
         title: "Fine Dining Experiences",
-        description: "Special dinners and wine tastings to celebrate milestones together.",
-        goal: 2500
+        description: "Gift us special dinners and wine tastings to celebrate milestones together.",
+        giftTarget: 2500
       },
       {
         title: "Couples Spa Retreats",
-        description: "Relaxing spa days to unwind and reconnect throughout the year.",
-        goal: 2000
+        description: "Your gift of relaxing spa days helps us unwind and reconnect throughout the year.",
+        giftTarget: 2000
       },
       {
         title: "Concert & Theater Nights",
-        description: "Create magical evenings with live music and performances we'll treasure.",
-        goal: 1800
+        description: "Gift us magical evenings with live music and performances we'll treasure forever.",
+        giftTarget: 1800
       }
     ],
     
