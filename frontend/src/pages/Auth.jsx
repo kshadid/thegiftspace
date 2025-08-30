@@ -7,6 +7,7 @@ import { Button } from "../components/ui/button";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import { useToast } from "../hooks/use-toast";
+import { PROFESSIONAL_COPY } from "../utils/professionalCopy";
 
 export default function AuthPage() {
   const { login, register } = useAuth();
@@ -20,8 +21,15 @@ export default function AuthPage() {
       setLoading(true);
       await login(email, password);
       navigate("/dashboard");
+      toast({ 
+        title: "Welcome back!", 
+        description: "Successfully signed in to your account." 
+      });
     } catch (e) {
-      toast({ title: "Login failed", description: e?.response?.data?.detail || e?.message || "Please try again." });
+      toast({ 
+        title: "Sign in failed", 
+        description: e?.response?.data?.detail || "Please check your credentials and try again." 
+      });
     } finally {
       setLoading(false);
     }
@@ -32,19 +40,36 @@ export default function AuthPage() {
       setLoading(true);
       await register(name, email, password);
       navigate("/dashboard");
+      toast({ 
+        title: "Welcome to The giftspace!", 
+        description: "Your account has been created successfully." 
+      });
     } catch (e) {
-      toast({ title: "Signup failed", description: e?.response?.data?.detail || e?.message || "Please try again." });
+      toast({ 
+        title: "Registration failed", 
+        description: e?.response?.data?.detail || "Please check your information and try again." 
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-16">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-center">Welcome</CardTitle>
-        </CardHeader>
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-50">
+      {/* Header */}
+      <div className="pt-8 pb-4 text-center">
+        <Link to="/" className="text-2xl font-bold text-rose-600 hover:text-rose-700">
+          The giftspace
+        </Link>
+        <p className="text-gray-600 mt-2">Your perfect wedding registry platform</p>
+      </div>
+      
+      <div className="flex items-center justify-center px-4 pb-16">
+        <Card className="w-full max-w-md shadow-lg">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-semibold">Get Started</CardTitle>
+            <p className="text-gray-600 mt-2">Create your beautiful wedding registry in minutes</p>
+          </CardHeader>
         <CardContent>
           <Tabs defaultValue="login">
             <TabsList className="grid grid-cols-2 w-full">
