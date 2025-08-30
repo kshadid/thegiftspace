@@ -65,7 +65,7 @@ export default function Dashboard() {
     <div className="min-h-screen">
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur border-b">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link to="/" className="font-semibold text-lg tracking-tight">Dashboard</Link>
+          <Link to="/" className="font-semibold text-lg tracking-tight">The giftspace</Link>
           <div className="flex items-center gap-3 text-sm">
             <span className="text-muted-foreground">{user?.name}</span>
             <Button variant="secondary" onClick={() => navigate("/create")}>Manage</Button>
