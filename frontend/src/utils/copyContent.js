@@ -1,17 +1,17 @@
 // Professional copy content for The giftspace platform
 
-// Registry creation suggestions
+// Gift registry creation suggestions
 export const PROFESSIONAL_COPY = {
-  // Registry suggestions
+  // Gift registry suggestions
   registryTitles: [
-    "Our Dream Honeymoon",
-    "The Perfect Wedding Weekend", 
+    "Our Dream Honeymoon Gifts",
+    "The Perfect Wedding Gift Registry", 
     "Celebrating Love & New Beginnings",
-    "Our Wedding & Future Together",
+    "Our Wedding Gift Wishes",
     "A Celebration of Forever"
   ],
 
-  // Fund suggestions by category
+  // Gift fund suggestions by category
   funds: {
     honeymoon: [
       {
