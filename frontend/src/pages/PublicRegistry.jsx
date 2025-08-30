@@ -70,9 +70,9 @@ export default function PublicRegistry() {
       });
 
       toast({ 
-        title: PROFESSIONAL_COPY.contribute.thankYou,
+        title: MARKETING_COPY.contribute.thankYou,
         description: contributorEmail 
-          ? PROFESSIONAL_COPY.contribute.emailReceipt 
+          ? MARKETING_COPY.contribute.emailReceipt 
           : "Your contribution has been recorded successfully."
       });
 
