@@ -261,7 +261,7 @@ export default function CreateRegistry() {
                     </div>
                     <div>
                       <Label>Public URL slug</Label>
-                      <Input value={registry.slug || ""} onChange={(e) => updateRegistry({ slug: e.target.value.replace(/\s+/g, "-").toLowerCase() })} placeholder="amir-leila" />
+                      <Input value={registry.slug || ""} onChange={(e) => updateRegistry({ slug: e.target.value.replace(/\s+/g, "-").toLowerCase() })} placeholder="sarah-ahmed" />
                     </div>
                     <div>
                       <Label>Currency</Label>
