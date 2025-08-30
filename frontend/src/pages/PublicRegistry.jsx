@@ -1,311 +1,418 @@
 import React from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { Card, CardContent } from "../components/ui/card";
-import { Progress } from "../components/ui/progress";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group";
 import { Label } from "../components/ui/label";
+import { Progress } from "../components/ui/progress";
+import { Badge } from "../components/ui/badge";
 import { Checkbox } from "../components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
 import { useToast } from "../hooks/use-toast";
+import { Heart, Gift, Users, Calendar, MapPin, Search, Filter } from "lucide-react";
 import { getPublicRegistry, createContribution } from "../lib/api";
-import { loadRegistry as loadLocalRegistry, loadFunds as loadLocalFunds, sumForFund as sumLocal, totalReceived as totalLocal } from "../mock/mock";
-import { getAccessToken } from "../lib/api";
-
-const themeClasses = {
-  modern: { overlay: "bg-black/40", title: "text-white", subtle: "text-white/90" },
-  serif: { overlay: "bg-black/30", title: "text-white", subtle: "text-white/85" },
-  pastel: { overlay: "bg-rose-900/20", title: "text-white", subtle: "text-white/90" },
-  dark: { overlay: "bg-black/60", title: "text-white", subtle: "text-white/80" },
-};
+import { PROFESSIONAL_COPY, formatCurrency } from "../utils/professionalCopy";
+import Footer from "../components/layout/Footer";
 
 export default function PublicRegistry() {
   const { slug } = useParams();
-  const [registry, setRegistry] = React.useState(loadLocalRegistry());
-  const [funds, setFunds] = React.useState(loadLocalFunds());
-  const [query, setQuery] = React.useState("");
-  const [activeCat, setActiveCat] = React.useState("All");
+  const { toast } = useToast();
 
-    if (!getAccessToken()) {
-      // When unauthenticated, public page may be viewed by guests: no change
-    }
+  const [data, setData] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [selectedCategory, setSelectedCategory] = React.useState("all");
+
+  // Contribution modal state
+  const [selectedFund, setSelectedFund] = React.useState(null);
+  const [contributionAmount, setContributionAmount] = React.useState("");
+  const [contributorName, setContributorName] = React.useState("");
+  const [contributorEmail, setContributorEmail] = React.useState("");
+  const [contributionMessage, setContributionMessage] = React.useState("");
+  const [isAnonymous, setIsAnonymous] = React.useState(false);
+  const [submitting, setSubmitting] = React.useState(false);
 
   React.useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await getPublicRegistry(slug);
-        setRegistry({
-          coupleNames: data.registry.couple_names,
-          eventDate: data.registry.event_date,
-          location: data.registry.location,
-          currency: data.registry.currency,
-          heroImage: data.registry.hero_image,
-          slug: data.registry.slug,
-          theme: data.registry.theme || "modern",
-        });
-        setFunds(
-          data.funds.map((f) => ({
-            id: f.id,
-            title: f.title,
-            description: f.description,
-            goal: f.goal,
-            coverUrl: f.cover_url,
-            category: f.category,
-            raised: f.raised,
-            progress: f.progress,
-            pinned: !!f.pinned,
-          }))
-        );
-        document.title = `${data.registry.couple_names} · Wedding Registry`;
-        const desc = `${data.registry.couple_names} · ${data.registry.event_date} — ${data.registry.location}`;
-        setMetaTag("description", desc);
-        setMetaTag("og:title", document.title);
-        setMetaTag("og:description", desc);
-        setMetaTag("og:image", data.registry.hero_image || "");
-      } catch (e) {
-        console.log("Public page using local mock due to backend error", e?.message);
-      }
-    };
-    fetchData();
+    loadRegistry();
   }, [slug]);
 
-  const theme = themeClasses[registry.theme || "modern"];
-  const receivedAll = funds.every((f) => typeof f.raised === "number")
-    ? funds.reduce((acc, f) => acc + (f.raised || 0), 0)
-    : totalLocal();
-
-  // Filters
-  const categories = ["All", ...Array.from(new Set((funds || []).map((f) => f.category).filter(Boolean)))];
-  const matchesQuery = (f) => {
-    const q = (query || "").toLowerCase();
-    if (!q) return true;
-    return (f.title || "").toLowerCase().includes(q) || (f.description || "").toLowerCase().includes(q) || (f.category || "").toLowerCase().includes(q);
-  };
-  const matchesCat = (f) => activeCat === "All" || (f.category || "") === activeCat;
-  const filtered = (funds || []).filter((f) => matchesQuery(f) && matchesCat(f));
-
-  // Pinned only when no filters
-  const showPinned = !query && activeCat === "All";
-  const pinned = showPinned ? funds.find((f) => f.pinned || (f.category || "").toLowerCase().includes("general")) : null;
-  const others = pinned ? filtered.filter((f) => f.id !== pinned.id) : filtered;
-
-  return (
-    <div className="min-h-screen">
-      <div className="relative">
-        <img src={registry.heroImage} alt="Hero" className="w-full h-[360px] object-cover" />
-        <div className={`absolute inset-0 ${theme.overlay}`} />
-        <div className="absolute inset-0 flex items-end">
-          <div className="max-w-6xl mx-auto px-4 pb-6 w-full flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-            <div>
-              <h1 className={`${theme.title} text-4xl font-semibold tracking-tight`}>{registry.coupleNames}</h1>
-              <p className={`${theme.subtle}`}>{registry.eventDate} — {registry.location}</p>
-            </div>
-            <div className="text-right">
-              <div className={`${theme.subtle} text-sm`}>Raised</div>
-              <div className={`${theme.title} text-3xl font-semibold`}>{formatCurrency(receivedAll, registry.currency)}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <a id="gifts" />
-
-      <div className="max-w-6xl mx-auto px-4 py-10">
-        {/* Filters */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            {categories.map((c) => (
-              <button key={c} onClick={() => setActiveCat(c)} className={`text-xs px-3 py-1 rounded-full border ${activeCat === c ? 'bg-primary text-primary-foreground border-primary' : 'bg-white text-foreground hover:bg-accent'}`}>{c}</button>
-            ))}
-          </div>
-          <div className="max-w-sm w-full md:w-auto">
-            <Input placeholder="Search gifts…" value={query} onChange={(e) => setQuery(e.target.value)} />
-          </div>
-        </div>
-
-        {showPinned && pinned ? (
-          <div className="mt-8"><PinnedFund fund={pinned} currency={registry.currency} /></div>
-        ) : null}
-
-        <div className="grid md:grid-cols-3 gap-6 mt-6">
-          {others.length === 0 ? (
-            <div className="md:col-span-3 p-8 rounded-lg border text-center text-muted-foreground">No gifts match your filters.</div>
-          ) : (
-            others.map((f) => (
-              <FundCard key={f.id} fund={f} currency={registry.currency} />
-            ))
-          )}
-        </div>
-
-        <div className="mt-12 p-6 rounded-lg border bg-muted/30">
-          <h2 className="text-xl font-medium">Share</h2>
-          <p className="text-sm text-muted-foreground mt-1">Send this link to your guests so they can contribute with ease.</p>
-          <div className="mt-3 flex gap-2">
-            <Input readOnly value={window.location.href} />
-            <Button onClick={() => navigator.clipboard.writeText(window.location.href)}>Copy</Button>
-          </div>
-        </div>
-
-        <div className="mt-12">
-          <Link to="/create" className="text-sm text-muted-foreground hover:text-foreground">Edit registry →</Link>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PinnedFund({ fund, currency }) {
-  const { toast } = useToast();
-  const received = typeof fund.raised === "number" ? fund.raised : sumLocal(fund.id);
-  const progress = typeof fund.progress === "number" ? fund.progress : Math.min(100, Math.round((received / (fund.goal || 1)) * 100));
-  return (
-    <Card className="overflow-hidden hover:shadow-sm transition-shadow">
-      <CardContent className="p-0">
-        <img src={fund.coverUrl} alt={fund.title} className="w-full h-64 object-cover" />
-        <div className="p-6 space-y-3">
-          <div className="text-xs text-muted-foreground">Highlighted</div>
-          <div className="text-2xl font-semibold tracking-tight">{fund.title}</div>
-          <p className="text-sm text-muted-foreground max-w-2xl">{fund.description}</p>
-          <div className="mt-2 max-w-2xl">
-            <Progress value={progress} />
-            <div className="mt-1 text-xs text-muted-foreground flex items-center justify-between">
-              <span>{formatCurrency(received, currency)} raised</span>
-              <span>Goal {formatCurrency(fund.goal, currency)}</span>
-            </div>
-          </div>
-          <div className="pt-2 max-w-sm">
-            <ContributionDialog fund={fund} currency={currency} onComplete={() => { toast({ title: "Contribution recorded", description: "Thank you!" }); window.location.reload(); }} />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function FundCard({ fund, currency }) {
-  const { toast } = useToast();
-  const received = typeof fund.raised === "number" ? fund.raised : sumLocal(fund.id);
-  const progress = typeof fund.progress === "number" ? fund.progress : Math.min(100, Math.round((received / (fund.goal || 1)) * 100));
-
-  return (
-    <Card className="overflow-hidden hover:shadow-sm transition-shadow">
-      <CardContent className="p-0">
-        <img src={fund.coverUrl} alt={fund.title} className="w-full h-40 object-cover" />
-        <div className="p-4 space-y-2">
-          <div className="text-xs text-muted-foreground">{fund.category}</div>
-          <div className="font-medium tracking-tight">{fund.title}</div>
-          <p className="text-sm text-muted-foreground">{fund.description}</p>
-          <div className="mt-2">
-            <Progress value={progress} />
-            <div className="mt-1 text-xs text-muted-foreground flex items-center justify-between">
-              <span>{formatCurrency(received, currency)} raised</span>
-              <span>Goal {formatCurrency(fund.goal, currency)}</span>
-            </div>
-          </div>
-          <div className="pt-2">
-            <ContributionDialog fund={fund} currency={currency} onComplete={() => { toast({ title: "Contribution recorded", description: "Thank you!" }); window.location.reload(); }} />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function ContributionDialog({ fund, currency, onComplete }) {
-  const [open, setOpen] = React.useState(false);
-  const [amount, setAmount] = React.useState(250);
-  const [name, setName] = React.useState("");
-  const [message, setMessage] = React.useState("");
-  const [method, setMethod] = React.useState("card");
-  const [guestEmail, setGuestEmail] = React.useState("");
-  const [isPublic, setIsPublic] = React.useState(true);
-
-  const quick = [100, 250, 500, 1000];
-
-  const submit = async () => {
+  const loadRegistry = async () => {
     try {
-      await createContribution({ fund_id: fund.id, name: name || "Guest", amount: Number(amount || 0), message, public: !!isPublic, method, guest_email: guestEmail || undefined });
-    } catch (e) {
-      console.log("Backend contribution failed, using local mock", e?.message);
-      const { addContribution } = await import("../mock/mock");
-      addContribution({ fundId: fund.id, name: name || "Guest", amount: Number(amount || 0), message, public: !!isPublic, createdAt: new Date().toISOString(), method });
+      setLoading(true);
+      const response = await getPublicRegistry(slug);
+      setData(response);
+    } catch (err) {
+      setError(err.response?.data?.detail || "Registry not found");
+    } finally {
+      setLoading(false);
     }
-    setOpen(false);
-    onComplete();
   };
 
+  const handleContribute = async () => {
+    if (!contributionAmount || parseFloat(contributionAmount) <= 0) {
+      toast({ title: "Invalid amount", description: "Please enter a valid contribution amount." });
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await createContribution({
+        fund_id: selectedFund.id,
+        amount: parseFloat(contributionAmount),
+        name: isAnonymous ? null : contributorName,
+        guest_email: contributorEmail || null,
+        message: contributionMessage || null,
+        public: !isAnonymous,
+        method: "manual"
+      });
+
+      toast({ 
+        title: PROFESSIONAL_COPY.contribute.thankYou,
+        description: contributorEmail 
+          ? PROFESSIONAL_COPY.contribute.emailReceipt 
+          : "Your contribution has been recorded successfully."
+      });
+
+      // Reset form
+      setContributionAmount("");
+      setContributorName("");
+      setContributorEmail("");
+      setContributionMessage("");
+      setSelectedFund(null);
+      
+      // Reload to get updated totals
+      loadRegistry();
+    } catch (err) {
+      toast({ 
+        title: "Contribution failed", 
+        description: err.response?.data?.detail || "Please try again." 
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const filteredFunds = React.useMemo(() => {
+    if (!data?.funds) return [];
+    
+    return data.funds.filter(fund => {
+      const matchesSearch = !searchTerm || 
+        fund.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (fund.description || "").toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesCategory = selectedCategory === "all" || 
+        (fund.category || "general").toLowerCase() === selectedCategory.toLowerCase();
+      
+      return matchesSearch && matchesCategory;
+    });
+  }, [data?.funds, searchTerm, selectedCategory]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading registry...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="text-6xl mb-4">💔</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Registry Not Found</h1>
+          <p className="text-gray-600 mb-6">
+            The registry you're looking for doesn't exist or may have been removed.
+          </p>
+          <Button onClick={() => window.location.href = "/"}>
+            Visit The giftspace
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const { registry, funds, totals } = data;
+  const categories = [...new Set(funds.map(f => f.category || "general"))];
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="w-full">Contribute</Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[520px]">
-        <DialogHeader>
-          <DialogTitle>Contribute to {fund.title}</DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-4">
-          <div>
-            <Label className="text-xs">Amount ({currency})</Label>
-            <div className="mt-1 grid grid-cols-4 gap-2">
-              {quick.map((q) => (
-                <button key={q} onClick={() => setAmount(q)} className={`text-sm rounded-md border px-3 py-2 hover:bg-muted ${amount === q ? "bg-muted" : ""}`}>{q}</button>
-              ))}
-            </div>
-            <Input className="mt-2" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-50">
+      {/* Hero Section */}
+      <div className="relative">
+        {registry.hero_image && (
+          <div className="h-96 bg-cover bg-center relative" style={{ backgroundImage: `url(${registry.hero_image})` }}>
+            <div className="absolute inset-0 bg-black bg-opacity-40"></div>
           </div>
-          <div className="grid md:grid-cols-2 gap-3">
-            <div>
-              <Label className="text-xs">Your name</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Optional" />
-            </div>
-            <div>
-              <Label className="text-xs">Your email (for receipt)</Label>
-              <Input type="email" value={guestEmail} onChange={(e) => setGuestEmail(e.target.value)} placeholder="Optional" />
-            </div>
-          </div>
-          <div>
-            <Label className="text-xs">Message</Label>
-            <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Optional" />
-          </div>
-          <div>
-            <Label className="text-xs mb-2 block">Payment method (mock)</Label>
-            <RadioGroup value={method} onValueChange={setMethod} className="grid grid-cols-2 gap-2">
-              {[{ id: "card", label: "Credit/Debit Card" }, { id: "paypal", label: "PayPal" }, { id: "revolut", label: "Revolut" }, { id: "bank", label: "Bank Transfer" }].map((m) => (
-                <div key={m.id} className="flex items-center space-x-2 rounded-md border p-2">
-                  <RadioGroupItem id={m.id} value={m.id} />
-                  <Label htmlFor={m.id}>{m.label}</Label>
+        )}
+        
+        <div className="relative max-w-4xl mx-auto px-4 py-12">
+          <div className="text-center text-white">
+            <h1 className="text-5xl font-bold mb-4">{registry.couple_names}</h1>
+            <div className="flex flex-wrap items-center justify-center gap-6 text-lg">
+              {registry.event_date && (
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  <span>{new Date(registry.event_date).toLocaleDateString()}</span>
                 </div>
-              ))}
-            </RadioGroup>
+              )}
+              {registry.location && (
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-5 h-5" />
+                  <span>{registry.location}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Registry Content */}
+      <div className="max-w-6xl mx-auto px-4 py-12">
+        {/* Progress Summary */}
+        <Card className="mb-8">
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+              <div>
+                <div className="text-3xl font-bold text-rose-600">
+                  {formatCurrency(totals.raised, registry.currency)}
+                </div>
+                <p className="text-gray-600">Total Raised</p>
+              </div>
+              <div>
+                <div className="text-3xl font-bold text-gray-900">
+                  {formatCurrency(totals.goal, registry.currency)}
+                </div>
+                <p className="text-gray-600">Total Goal</p>
+              </div>
+              <div>
+                <div className="text-3xl font-bold text-green-600">
+                  {Math.round((totals.raised / totals.goal) * 100) || 0}%
+                </div>
+                <p className="text-gray-600">Complete</p>
+              </div>
+            </div>
+            {totals.goal > 0 && (
+              <div className="mt-6">
+                <Progress value={(totals.raised / totals.goal) * 100} className="h-3" />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Search and Filter */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Input
+              placeholder="Search funds..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
           <div className="flex items-center gap-2">
-            <Checkbox id="public" checked={isPublic} onCheckedChange={setIsPublic} />
-            <Label htmlFor="public">Show my name/message publicly</Label>
+            <Filter className="w-5 h-5 text-gray-600" />
+            <select 
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-500"
+            >
+              <option value="all">All Categories</option>
+              {categories.map(cat => (
+                <option key={cat} value={cat}>
+                  {PROFESSIONAL_COPY.funds.categories[cat] || cat}
+                </option>
+              ))}
+            </select>
           </div>
-          <Button onClick={submit}>Confirm contribution</Button>
-          <p className="text-xs text-muted-foreground">This is a demo. Payments are mocked; contributions are recorded.</p>
         </div>
-      </DialogContent>
-    </Dialog>
+
+        {/* Funds Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredFunds.map(fund => {
+            const progress = fund.goal > 0 ? (fund.raised / fund.goal) * 100 : 0;
+            
+            return (
+              <Card key={fund.id} className="group hover:shadow-lg transition-shadow">
+                {fund.cover_url && (
+                  <div className="h-48 bg-cover bg-center rounded-t-lg" style={{ backgroundImage: `url(${fund.cover_url})` }}>
+                    <div className="h-full bg-black bg-opacity-20 rounded-t-lg flex items-end">
+                      <div className="p-4 text-white">
+                        <Badge variant="secondary" className="bg-white/90 text-gray-900">
+                          {PROFESSIONAL_COPY.funds.categories[fund.category] || fund.category}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <CardContent className="p-6">
+                  <div className="mb-4">
+                    <h3 className="text-xl font-semibold mb-2">{fund.title}</h3>
+                    {fund.description && (
+                      <p className="text-gray-600 text-sm">{fund.description}</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-bold text-rose-600">
+                        {formatCurrency(fund.raised, registry.currency)}
+                      </span>
+                      <span className="text-gray-600">
+                        of {formatCurrency(fund.goal, registry.currency)}
+                      </span>
+                    </div>
+                    
+                    <Progress value={progress} className="h-2" />
+                    
+                    <div className="flex justify-between items-center text-sm text-gray-600">
+                      <span>{fund.contributions_count} contributors</span>
+                      <span>{Math.round(progress)}% funded</span>
+                    </div>
+                  </div>
+                  
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button 
+                        className="w-full mt-4 group-hover:bg-rose-600 transition-colors"
+                        onClick={() => setSelectedFund(fund)}
+                      >
+                        <Gift className="w-4 h-4 mr-2" />
+                        {PROFESSIONAL_COPY.buttons.contribute}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>{PROFESSIONAL_COPY.contribute.title}</DialogTitle>
+                        <p className="text-gray-600">{PROFESSIONAL_COPY.contribute.subtitle}</p>
+                      </DialogHeader>
+                      
+                      <div className="space-y-4">
+                        {/* Fund Details */}
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                          <h4 className="font-semibold">{fund.title}</h4>
+                          <p className="text-sm text-gray-600">for {registry.couple_names}</p>
+                        </div>
+                        
+                        {/* Contribution Amount */}
+                        <div>
+                          <Label htmlFor="amount">Contribution Amount ({registry.currency})</Label>
+                          <Input
+                            id="amount"
+                            type="number"
+                            placeholder="0.00"
+                            value={contributionAmount}
+                            onChange={(e) => setContributionAmount(e.target.value)}
+                            min="1"
+                            step="0.01"
+                          />
+                        </div>
+                        
+                        {/* Contributor Details */}
+                        <div className="space-y-3">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              id="anonymous"
+                              checked={isAnonymous}
+                              onCheckedChange={setIsAnonymous}
+                            />
+                            <Label htmlFor="anonymous" className="text-sm">
+                              {PROFESSIONAL_COPY.contribute.anonymous}
+                            </Label>
+                          </div>
+                          
+                          {!isAnonymous && (
+                            <>
+                              <div>
+                                <Label htmlFor="name">Your Name</Label>
+                                <Input
+                                  id="name"
+                                  placeholder="Enter your full name"
+                                  value={contributorName}
+                                  onChange={(e) => setContributorName(e.target.value)}
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor="email">Email (optional)</Label>
+                                <Input
+                                  id="email"
+                                  type="email"
+                                  placeholder="your.email@example.com"
+                                  value={contributorEmail}
+                                  onChange={(e) => setContributorEmail(e.target.value)}
+                                />
+                                <p className="text-xs text-gray-600 mt-1">
+                                  Receive a receipt and updates
+                                </p>
+                              </div>
+                            </>
+                          )}
+                          
+                          <div>
+                            <Label htmlFor="message">Message (optional)</Label>
+                            <Textarea
+                              id="message"
+                              placeholder={PROFESSIONAL_COPY.contribute.messagePlaceholder}
+                              value={contributionMessage}
+                              onChange={(e) => setContributionMessage(e.target.value)}
+                              rows={3}
+                            />
+                          </div>
+                        </div>
+                        
+                        <Button 
+                          onClick={handleContribute}
+                          disabled={submitting || !contributionAmount || parseFloat(contributionAmount) <= 0}
+                          className="w-full"
+                        >
+                          <Heart className="w-4 h-4 mr-2" />
+                          {submitting ? PROFESSIONAL_COPY.messages.loading.saving : `Contribute ${contributionAmount ? formatCurrency(parseFloat(contributionAmount), registry.currency) : ''}`}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        {filteredFunds.length === 0 && (
+          <div className="text-center py-12">
+            <Gift className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No funds found</h3>
+            <p className="text-gray-600">
+              {searchTerm || selectedCategory !== "all" 
+                ? "Try adjusting your search or filter criteria."
+                : "This registry doesn't have any funds yet."
+              }
+            </p>
+          </div>
+        )}
+
+        {/* Registry Footer */}
+        <div className="mt-16 text-center">
+          <div className="inline-flex items-center gap-2 text-gray-600">
+            <Heart className="w-4 h-4 text-rose-500" />
+            <span>Powered by</span>
+            <a 
+              href="https://thegiftspace.com" 
+              className="text-rose-600 hover:text-rose-700 font-medium"
+            >
+              The giftspace
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <Footer />
+    </div>
   );
-}
-
-function formatCurrency(amount, currency = "AED") {
-  try { return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(amount); }
-  catch { return `${currency} ${Number(amount || 0).toFixed(2)}`; }
-}
-
-function setMetaTag(name, content) {
-  const heads = document.getElementsByTagName("head");
-  if (!heads || !heads[0]) return;
-  let el = heads[0].querySelector(`meta[name='${name}']`) || heads[0].querySelector(`meta[property='${name}']`);
-  if (!el) {
-    el = document.createElement("meta");
-    if (name.startsWith("og:")) el.setAttribute("property", name);
-    else el.setAttribute("name", name);
-    heads[0].appendChild(el);
-  }
-  el.setAttribute("content", content);
 }

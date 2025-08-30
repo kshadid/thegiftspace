@@ -1,125 +1,168 @@
-/*
-  Mock data and localStorage helpers for the Hitchd-style cash registry clone.
-  All data is mocked. No backend calls yet.
-*/
+import { PROFESSIONAL_COPY, getRandomFundSuggestion } from "../utils/professionalCopy";
+import { getRandomRegistryImage, getRandomImageByCategory } from "../utils/defaultImages";
 
+// Enhanced mock data with professional copy and beautiful images
 export const DEFAULT_CURRENCY = "AED";
 
-export const sampleRegistry = {
-  coupleNames: "Amir & Leila",
-  eventDate: "2025-12-20",
-  location: "Dubai, UAE",
-  slug: "amir-leila",
-  heroImage:
-    "https://images.unsplash.com/photo-1520440718111-45fe694b330a?q=80&amp;w=1920&amp;auto=format&amp;fit=crop",
-  currency: DEFAULT_CURRENCY,
-};
-
-export const sampleFunds = [
-  {
-    id: "fund-general",
-    title: "Our Honeymoon Fund",
-    description:
-      "Help us create unforgettable memories on our first trip as a married couple.",
-    goal: 20000,
-    coverUrl:
-      "https://images.unsplash.com/photo-1545048702-79362596cdc7?q=80&amp;w=1200&amp;auto=format&amp;fit=crop",
-    category: "General",
-  },
-  {
-    id: "fund-desert",
-    title: "Desert Safari & Dinner",
-    description: "An evening under the stars with dune bashing and a private dinner.",
-    goal: 2500,
-    coverUrl:
-      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&amp;w=1200&amp;auto=format&amp;fit=crop",
-    category: "Experience",
-  },
-  {
-    id: "fund-maldives",
-    title: "Maldives Overwater Villa Night",
-    description: "One dreamy night in an overwater villa to remember forever.",
-    goal: 3500,
-    coverUrl:
-      "https://images.unsplash.com/photo-1518780664697-55e3ad937233?q=80&amp;w=1200&amp;auto=format&amp;fit=crop",
-    category: "Stay",
-  },
+const THEME_PRESETS = [
+  { value: "modern", label: "Modern", description: PROFESSIONAL_COPY.registry.themes.modern },
+  { value: "romantic", label: "Romantic", description: PROFESSIONAL_COPY.registry.themes.romantic },
+  { value: "rustic", label: "Rustic", description: PROFESSIONAL_COPY.registry.themes.rustic },
+  { value: "luxury", label: "Luxury", description: PROFESSIONAL_COPY.registry.themes.luxury },
 ];
 
-export const sampleContributions = [
-  {
-    id: "c1",
-    fundId: "fund-general",
-    name: "Sara A.",
-    amount: 500,
-    message: "Wishing you a lifetime of adventures!",
-    public: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "c2",
-    fundId: "fund-desert",
-    name: "Omar",
-    amount: 300,
-    message: "Enjoy the dunes!",
-    public: true,
-    createdAt: new Date().toISOString(),
-  },
-];
+// Clear any existing sample data when user starts fresh
+let hasLoggedInUser = false;
 
-// localStorage keys
-const LS_KEYS = {
-  registry: "registryData",
-  funds: "registryFunds",
-  contributions: "registryContributions",
-};
+export function clearSampleDataOnLogin() {
+  if (!hasLoggedInUser) {
+    localStorage.removeItem('wedding_registry');
+    localStorage.removeItem('wedding_funds');
+    hasLoggedInUser = true;
+  }
+}
 
 export function loadRegistry() {
-  const raw = localStorage.getItem(LS_KEYS.registry);
-  return raw ? JSON.parse(raw) : sampleRegistry;
+  const stored = localStorage.getItem('wedding_registry');
+  if (stored) {
+    return JSON.parse(stored);
+  }
+  
+  // Return empty registry instead of sample data
+  return {
+    couple_names: '',
+    event_date: '',
+    location: '', 
+    currency: DEFAULT_CURRENCY,
+    hero_image: '',
+    slug: '',
+    theme: 'modern'
+  };
 }
-export function saveRegistry(data) {
-  localStorage.setItem(LS_KEYS.registry, JSON.stringify(data));
+
+export function saveRegistry(registry) {
+  localStorage.setItem('wedding_registry', JSON.stringify(registry));
 }
 
 export function loadFunds() {
-  const raw = localStorage.getItem(LS_KEYS.funds);
-  return raw ? JSON.parse(raw) : sampleFunds;
+  const stored = localStorage.getItem('wedding_funds');
+  return stored ? JSON.parse(stored) : [];
 }
+
 export function saveFunds(funds) {
-  localStorage.setItem(LS_KEYS.funds, JSON.stringify(funds));
+  localStorage.setItem('wedding_funds', JSON.stringify(funds));
 }
 
-export function loadContributions() {
-  const raw = localStorage.getItem(LS_KEYS.contributions);
-  return raw ? JSON.parse(raw) : sampleContributions;
-}
-export function saveContributions(list) {
-  localStorage.setItem(LS_KEYS.contributions, JSON.stringify(list));
-}
-
-export function addContribution(contrib) {
-  const list = loadContributions();
-  const withId = { ...contrib, id: `c_${Date.now()}` };
-  list.unshift(withId);
-  saveContributions(list);
-  return withId;
-}
-
-export function sumForFund(fundId) {
-  return loadContributions()
-    .filter((c) => c.fundId === fundId)
-    .reduce((acc, c) => acc + Number(c.amount || 0), 0);
+// Professional fund suggestions based on category
+export function getFundSuggestions(category = 'general') {
+  const suggestions = PROFESSIONAL_COPY.funds.suggestions[category] || PROFESSIONAL_COPY.funds.suggestions.general;
+  return suggestions.map((title, index) => ({
+    id: `suggestion_${category}_${index}`,
+    title,
+    description: `${title} - help us create unforgettable memories together`,
+    goal: category === 'honeymoon' ? 8000 : category === 'home' ? 5000 : 3000,
+    category: category,
+    cover_url: getRandomImageByCategory(category).url,
+    visible: true,
+    order: index + 1,
+    pinned: false
+  }));
 }
 
-export function totalReceived() {
-  return loadContributions().reduce((acc, c) => acc + Number(c.amount || 0), 0);
+// Create a new fund with professional defaults
+export function createNewFund(category = 'general') {
+  const suggestion = getRandomFundSuggestion(category);
+  const image = getRandomImageByCategory(category);
+  
+  return {
+    id: Date.now().toString(),
+    title: suggestion || PROFESSIONAL_COPY.funds.placeholders.title,
+    description: PROFESSIONAL_COPY.funds.placeholders.description,
+    goal: parseFloat(PROFESSIONAL_COPY.funds.placeholders.goal),
+    category: category,
+    cover_url: image.url,
+    visible: true,
+    order: 1,
+    pinned: false
+  };
 }
 
-export function ensureDefaults() {
-  // Initialize LS on first load
-  if (!localStorage.getItem(LS_KEYS.registry)) saveRegistry(sampleRegistry);
-  if (!localStorage.getItem(LS_KEYS.funds)) saveFunds(sampleFunds);
-  if (!localStorage.getItem(LS_KEYS.contributions))
-    saveContributions(sampleContributions);
+// Professional registry templates
+export function getRegistryTemplate(type = 'modern') {
+  const defaultImage = getRandomRegistryImage();
+  
+  const templates = {
+    modern: {
+      couple_names: '',
+      event_date: '',
+      location: '',
+      currency: DEFAULT_CURRENCY,
+      hero_image: defaultImage.url,
+      theme: 'modern'
+    },
+    romantic: {
+      couple_names: '',
+      event_date: '',
+      location: '', 
+      currency: DEFAULT_CURRENCY,
+      hero_image: defaultImage.url,
+      theme: 'romantic'
+    }
+  };
+  
+  return templates[type] || templates.modern;
 }
+
+// Validation helpers
+export function validateRegistry(registry) {
+  const errors = {};
+  
+  if (!registry.couple_names?.trim()) {
+    errors.couple_names = "Couple names are required";
+  }
+  
+  if (!registry.slug?.trim()) {
+    errors.slug = "Registry URL is required";
+  } else if (!/^[a-z0-9-]+$/.test(registry.slug)) {
+    errors.slug = "URL can only contain lowercase letters, numbers, and hyphens";
+  }
+  
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors
+  };
+}
+
+export function validateFund(fund) {
+  const errors = {};
+  
+  if (!fund.title?.trim()) {
+    errors.title = "Fund title is required";
+  }
+  
+  if (fund.goal < 0) {
+    errors.goal = "Goal must be a positive number";
+  }
+  
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors
+  };
+}
+
+// Professional messaging
+export function getWelcomeMessage(user) {
+  return `${PROFESSIONAL_COPY.registry.welcome} Let's create something beautiful for your special day.`;
+}
+
+export function getSuccessMessage(action) {
+  const messages = {
+    'registry_created': PROFESSIONAL_COPY.messages.success.registryCreated,
+    'fund_added': PROFESSIONAL_COPY.messages.success.fundAdded,
+    'settings_saved': PROFESSIONAL_COPY.messages.success.settingsSaved
+  };
+  
+  return messages[action] || PROFESSIONAL_COPY.messages.success.registryCreated;
+}
+
+export { THEME_PRESETS };
