@@ -160,5 +160,34 @@ export const MARKETING_COPY = {
       quote: "Setting up our gift registry was incredibly easy, and the design was absolutely beautiful. Our guests found it so thoughtful!",
       author: "Layla & Omar"  
     }
-  ]
+  ],
+
+  // Gift giving interface
+  buttons: {
+    contribute: "Send a Gift"
+  },
+
+  contribute: {
+    title: "Send a Beautiful Gift",
+    subtitle: "Your gift helps make their dreams come true",
+    thankYou: "Thank you for your gift!",
+    emailReceipt: "We'll send you a receipt and let the couple know about your thoughtful gift.",
+    anonymous: "Give anonymously",
+    messagePlaceholder: "Write a lovely message for the couple..."
+  },
+
+  messages: {
+    loading: {
+      saving: "Sending your gift..."
+    }
+  },
+
+  // Categories for gift funds
+  giftFundCategories: {
+    honeymoon: "Honeymoon",
+    travel: "Travel & Adventures", 
+    home: "Home & Living",
+    experience: "Experiences",
+    general: "General"
+  }
 };
