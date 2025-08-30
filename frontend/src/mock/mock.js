@@ -69,16 +69,16 @@ export function getFundSuggestions(category = 'general') {
   }));
 }
 
-// Create a new fund with professional defaults
+// Create a new gift fund with professional defaults
 export function createNewFund(category = 'general') {
   const suggestion = getRandomFundSuggestion(category);
   const image = getRandomImageByCategory(category);
   
   return {
     id: Date.now().toString(),
-    title: suggestion.title || "Special Fund",
-    description: suggestion.description || "Help us create unforgettable memories together",
-    goal: suggestion.goal || 3000,
+    title: suggestion.title || "Special Gift Fund",
+    description: suggestion.description || "Your gift helps us create unforgettable memories together",
+    goal: suggestion.giftTarget || 3000,
     category: category,
     cover_url: image.url,
     visible: true,
