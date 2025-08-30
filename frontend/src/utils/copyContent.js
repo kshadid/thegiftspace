@@ -142,12 +142,12 @@ export const MARKETING_COPY = {
       description: "Customize every detail to match your love story and wedding style."
     },
     {
-      title: "Easy for Guests",
-      description: "Simple, secure contributions that take seconds to complete."
+      title: "Easy for Gift Givers",
+      description: "Simple, secure gift giving that takes seconds to complete."
     },
     {
       title: "Real-time Updates", 
-      description: "Watch your dreams come to life as contributions roll in."
+      description: "Watch your dreams come to life as gifts from loved ones arrive."
     }
   ],
   
