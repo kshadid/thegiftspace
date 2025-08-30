@@ -519,6 +519,81 @@ async def login(body: LoginBody, request: Request):
 async def me(current: UserPublic = Depends(get_user_from_token)):
     return current
 
+# Password Reset Models
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+class PasswordResetConfirm(BaseModel):
+    token: str
+    new_password: constr(min_length=8)
+
+@api_router.post("/auth/password-reset/request")
+async def request_password_reset(body: PasswordResetRequest, request: Request, background_tasks: BackgroundTasks):
+    """Request a password reset - sends email with reset token"""
+    await rate_limit(request, key="password_reset", limit=3, window_sec=300)  # 3 requests per 5 minutes
+    
+    email = body.email.lower()
+    user = await find_user_by_email(email)
+    
+    # Always return success to prevent email enumeration
+    if not user:
+        return {"message": "If an account with this email exists, you will receive a password reset link."}
+    
+    # Create reset token (valid for 1 hour)
+    reset_token = create_access_token(user["id"], expires_delta=timedelta(hours=1))
+    
+    # Store reset token in database with expiration
+    await db.password_resets.insert_one({
+        "user_id": user["id"],
+        "token": reset_token,
+        "created_at": datetime.now(timezone.utc),
+        "expires_at": datetime.now(timezone.utc) + timedelta(hours=1),
+        "used": False
+    })
+    
+    # Send password reset email
+    background_tasks.add_task(send_password_reset_email, user["email"], user["name"], reset_token)
+    
+    return {"message": "If an account with this email exists, you will receive a password reset link."}
+
+@api_router.post("/auth/password-reset/confirm")
+async def confirm_password_reset(body: PasswordResetConfirm, request: Request):
+    """Confirm password reset with token and set new password"""
+    await rate_limit(request, key="password_reset_confirm", limit=5, window_sec=60)
+    
+    # Find and validate reset token
+    reset_record = await db.password_resets.find_one({
+        "token": body.token,
+        "used": False,
+        "expires_at": {"$gt": datetime.now(timezone.utc)}
+    })
+    
+    if not reset_record:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    
+    # Get user
+    user = await db.users.find_one({"id": reset_record["user_id"]})
+    if not user:
+        raise HTTPException(status_code=400, detail="User not found")
+    
+    # Update password
+    new_password_hash = hash_password(body.new_password)
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"password_hash": new_password_hash}}
+    )
+    
+    # Mark reset token as used
+    await db.password_resets.update_one(
+        {"_id": reset_record["_id"]},
+        {"$set": {"used": True}}
+    )
+    
+    # Log password reset for security
+    logging.info(f"Password reset completed for user {user['email']}")
+    
+    return {"message": "Password reset successful. You can now login with your new password."}
+
 # --- Admin ---
 class AdminMe(BaseModel):
     email: EmailStr
