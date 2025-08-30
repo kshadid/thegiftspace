@@ -68,7 +68,6 @@ export default function Dashboard() {
           <Link to="/" className="font-semibold text-lg tracking-tight">The giftspace</Link>
           <div className="flex items-center gap-3 text-sm">
             <span className="text-muted-foreground">{user?.name}</span>
-            <Button variant="secondary" onClick={() => navigate("/create")}>Manage</Button>
             <Button variant="destructive" onClick={logout}>Logout</Button>
           </div>
         </div>
