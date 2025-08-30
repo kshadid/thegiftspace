@@ -244,7 +244,7 @@ export default function PublicRegistry() {
                     <div className="h-full bg-black bg-opacity-20 rounded-t-lg flex items-end">
                       <div className="p-4 text-white">
                         <Badge variant="secondary" className="bg-white/90 text-gray-900">
-                          {PROFESSIONAL_COPY.funds.categories[fund.category] || fund.category}
+                          {MARKETING_COPY.giftFundCategories[fund.category] || fund.category}
                         </Badge>
                       </div>
                     </div>
