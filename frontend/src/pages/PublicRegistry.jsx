@@ -324,7 +324,7 @@ export default function PublicRegistry() {
                               onCheckedChange={setIsAnonymous}
                             />
                             <Label htmlFor="anonymous" className="text-sm">
-                              {PROFESSIONAL_COPY.contribute.anonymous}
+                              {MARKETING_COPY.contribute.anonymous}
                             </Label>
                           </div>
                           
