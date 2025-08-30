@@ -180,6 +180,8 @@ function App() {
               <Route path="/admin/u/:id" element={<AdminUserDetail />} />
               <Route path="/legal/terms" element={<Terms />} />
               <Route path="/legal/privacy" element={<Privacy />} />
+              {/* Catch-all route - redirect unknown paths to home */}
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
             <Toaster />
           </div>
