@@ -225,7 +225,7 @@ export default function PublicRegistry() {
               <option value="all">All Categories</option>
               {categories.map(cat => (
                 <option key={cat} value={cat}>
-                  {PROFESSIONAL_COPY.funds.categories[cat] || cat}
+                  {MARKETING_COPY.giftFundCategories[cat] || cat}
                 </option>
               ))}
             </select>
