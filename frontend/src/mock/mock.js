@@ -5,10 +5,10 @@ import { getRandomRegistryImage, getRandomImageByCategory } from "../utils/defau
 export const DEFAULT_CURRENCY = "AED";
 
 const THEME_PRESETS = [
-  { value: "modern", label: "Modern", description: PROFESSIONAL_COPY.registry.themes.modern },
-  { value: "romantic", label: "Romantic", description: PROFESSIONAL_COPY.registry.themes.romantic },
-  { value: "rustic", label: "Rustic", description: PROFESSIONAL_COPY.registry.themes.rustic },
-  { value: "luxury", label: "Luxury", description: PROFESSIONAL_COPY.registry.themes.luxury },
+  { value: "modern", label: "Modern", description: "Clean, contemporary design with elegant typography" },
+  { value: "romantic", label: "Romantic", description: "Soft, elegant styling perfect for intimate celebrations" },
+  { value: "rustic", label: "Rustic", description: "Natural, warm design with earthy tones" },
+  { value: "luxury", label: "Luxury", description: "Sophisticated design with premium aesthetics" },
 ];
 
 // Clear any existing sample data when user starts fresh
