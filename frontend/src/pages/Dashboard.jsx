@@ -140,11 +140,11 @@ export default function Dashboard() {
                     <div className="text-sm text-muted-foreground">Slug: {r.slug}</div>
                     <div className="mt-3 grid grid-cols-3 gap-3 text-sm">
                       <div className="rounded-md border p-2">
-                        <div className="text-xs text-muted-foreground">Funds</div>
+                        <div className="text-xs text-muted-foreground">Gift ideas</div>
                         <div className="font-medium">{byId[r.id]?.fundsCount ?? 0}</div>
                       </div>
                       <div className="rounded-md border p-2">
-                        <div className="text-xs text-muted-foreground">Raised</div>
+                        <div className="text-xs text-muted-foreground">Received</div>
                         <div className="font-medium">{formatCurrency(byId[r.id]?.analytics?.total || 0, r.currency)}</div>
                       </div>
                       <div className="rounded-md border p-2">
