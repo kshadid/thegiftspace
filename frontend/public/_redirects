@@ -1,0 +1,14 @@
+# Netlify redirects for Single Page Application (SPA)
+# This ensures all routes are handled by React Router
+
+# Handle all routes by serving index.html
+/*    /index.html   200
+
+# API calls should go to the backend (if using Netlify Functions)
+# /api/*  /.netlify/functions/:splat  200
+
+# Optional: Redirect www to non-www (if using custom domain)
+# https://www.thegiftspace.com/*  https://thegiftspace.com/:splat  301!
+
+# Optional: Force HTTPS (if using custom domain)
+# http://thegiftspace.com/*  https://thegiftspace.com/:splat  301!
