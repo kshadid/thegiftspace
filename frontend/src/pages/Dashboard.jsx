@@ -117,7 +117,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <Label className="text-xs">Public URL slug</Label>
-                  <Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value.replace(/\s+/g, "-").toLowerCase() })} placeholder="amir-leila" required />
+                  <Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value.replace(/\s+/g, "-").toLowerCase() })} placeholder="sarah-ahmed" required />
                 </div>
                 <div className="pt-2">
                   <Button type="submit" disabled={loading}>{loading ? "Creating…" : "Create event"}</Button>
