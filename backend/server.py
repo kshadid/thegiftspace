@@ -684,6 +684,11 @@ async def my_registries(current: UserPublic = Depends(get_user_from_token)):
     items = await db.registries.find({"$or": [{"owner_id": current.id}, {"collaborators": {"$in": [current.id]}}]}).sort("created_at", -1).to_list(1000)
     return [Registry(**{k: v for k, v in it.items() if k != "_id"}) for it in items]
 
+@api_router.get("/registries/mine", response_model=List[Registry])
+async def get_my_registries(current: UserPublic = Depends(get_user_from_token)):
+    items = await db.registries.find({"$or": [{"owner_id": current.id}, {"collaborators": {"$in": [current.id]}}]}).sort("created_at", -1).to_list(1000)
+    return [Registry(**{k: v for k, v in it.items() if k != "_id"}) for it in items]
+
 @api_router.get("/registries/{registry_id}", response_model=Registry)
 async def get_registry(registry_id: str, current: UserPublic = Depends(get_user_from_token)):
     reg = await db.registries.find_one({"id": registry_id})
