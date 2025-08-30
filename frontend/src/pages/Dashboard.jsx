@@ -111,7 +111,7 @@ export default function Dashboard() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[520px]">
               <DialogHeader>
-                <DialogTitle>Create a new gift registry</DialogTitle>
+                <DialogTitle>Create Your Wedding Registry</DialogTitle>
               </DialogHeader>
               <form className="grid gap-3" onSubmit={onCreate}>
                 <div>
