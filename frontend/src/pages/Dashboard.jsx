@@ -165,7 +165,7 @@ export default function Dashboard() {
 
         <div className="mt-10 p-6 rounded-lg border bg-muted/30">
           <div className="flex items-center gap-2 font-medium"><TrendingUp className="size-4"/> Latest numbers</div>
-          <div className="text-sm text-muted-foreground mt-1">Aggregated across your events.</div>
+          <div className="text-sm text-muted-foreground mt-1">Aggregated across your gift registries.</div>
         </div>
       </div>
     </div>
