@@ -251,7 +251,7 @@ class AuthenticationTester:
         """Test password verification by examining database directly"""
         print("\n=== 🔒 PASSWORD VERIFICATION LOGIC TEST ===")
         
-        if not self.db or 'user_email' not in self.test_data:
+        if self.db is None or 'user_email' not in self.test_data:
             self.log_result("Password Verification", False, "No database connection or user email")
             return
         
