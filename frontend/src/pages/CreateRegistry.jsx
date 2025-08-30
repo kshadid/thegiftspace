@@ -241,10 +241,10 @@ export default function CreateRegistry() {
             <Button onClick={addFund}><Plus className="size-4 mr-2"/>Add gift idea</Button>
             <Dialog open={manageOpen} onOpenChange={setManageOpen}>
               <DialogTrigger asChild>
-                <Button variant="secondary"><Cog className="size-4 mr-2"/>Manage event</Button>
+                <Button variant="secondary"><Cog className="size-4 mr-2"/>Manage gift registry</Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[760px]">
-                <DialogHeader><DialogTitle>Manage event</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>Manage gift registry</DialogTitle></DialogHeader>
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-3">
                     <div>
