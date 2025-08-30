@@ -238,7 +238,7 @@ export default function CreateRegistry() {
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Button onClick={addFund}><Plus className="size-4 mr-2"/>Add gift</Button>
+            <Button onClick={addFund}><Plus className="size-4 mr-2"/>Add gift idea</Button>
             <Dialog open={manageOpen} onOpenChange={setManageOpen}>
               <DialogTrigger asChild>
                 <Button variant="secondary"><Cog className="size-4 mr-2"/>Manage event</Button>
