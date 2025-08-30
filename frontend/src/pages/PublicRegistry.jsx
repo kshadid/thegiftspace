@@ -312,11 +312,12 @@ export default function PublicRegistry() {
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button 
-                        className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                        className="w-full mt-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 h-12 rounded-2xl font-semibold text-base"
                         onClick={() => setSelectedFund(fund)}
                       >
-                        <Gift className="w-4 h-4 mr-2" />
+                        <Heart className="w-5 h-5 mr-2" />
                         {MARKETING_COPY.buttons.contribute}
+                        <ArrowRight className="w-4 h-4 ml-2" />
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-md">
