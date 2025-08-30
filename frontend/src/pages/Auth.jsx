@@ -55,7 +55,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
       <div className="pt-8 pb-4 text-center">
         <Link to="/" className="text-2xl font-bold text-rose-600 hover:text-rose-700">
