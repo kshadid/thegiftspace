@@ -435,6 +435,14 @@ async def send_password_reset_email(
         logging.warning("Resend API key not configured, skipping email sending")
         return
     
+    # For development: Log the reset URL instead of sending email
+    domain = os.environ.get('FRONTEND_DOMAIN', 'http://localhost:3000')
+    reset_url = f"{domain}/auth/reset-password?token={reset_token}"
+    
+    logging.info(f"PASSWORD RESET REQUEST FOR {user_email}")
+    logging.info(f"Reset URL: {reset_url}")
+    logging.info(f"This URL is valid for 1 hour")
+    
     try:
         # Get domain from environment or use localhost for development
         domain = os.environ.get('FRONTEND_DOMAIN', 'http://localhost:3000')
