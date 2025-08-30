@@ -323,14 +323,14 @@ export default function CreateRegistry() {
         {/* Analytics strip */}
         <div className="grid md:grid-cols-3 gap-4 mt-6">
           <Card className="hover:shadow-sm transition-shadow">
-            <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Total raised</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Total received in gifts</CardTitle></CardHeader>
             <CardContent>
               <div className="text-2xl font-semibold">{formatCurrency(analytics?.total || 0, registry.currency)}</div>
               <div className="mt-2 text-muted-foreground"><Sparkline values={dailyVals} /></div>
             </CardContent>
           </Card>
           <Card className="hover:shadow-sm transition-shadow">
-            <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Contributions</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Gifts received</CardTitle></CardHeader>
             <CardContent>
               <div className="text-2xl font-semibold">{String(analytics?.count || 0)}</div>
             </CardContent>
