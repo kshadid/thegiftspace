@@ -68,6 +68,12 @@ export default function CreateRegistry() {
     // Auto-save registry changes to backend
     setTimeout(() => silentCloudSave(), 500); // Debounce auto-save
   };
+
+  const updateFund = (fundId, patch) => {
+    setFunds((all) => all.map((f) => (f.id === fundId ? { ...f, ...patch } : f)));
+    // Auto-save fund changes to backend
+    setTimeout(() => silentCloudSave(), 500); // Debounce auto-save
+  };
   const toggleSelect = (id, v) => setSelected((s) => ({ ...s, [id]: v }));
   const selectedIds = Object.keys(selected).filter((k) => selected[k]);
   const getRegId = () => localStorage.getItem("registry_id");
