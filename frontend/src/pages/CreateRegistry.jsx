@@ -160,7 +160,7 @@ export default function CreateRegistry() {
     }
   };
 
-  const publish = async () => { setPublishing(true); await saveAll(); setPublishing(false); navigate(`/r/${registry.slug || "amir-leila"}#gifts`); };
+  const publish = async () => { setPublishing(true); await saveAll(); setPublishing(false); navigate(`/r/${registry.slug || "our-wedding"}#gifts`); };
 
   const addFund = () => {
     const id = `fund_${Date.now()}`;
