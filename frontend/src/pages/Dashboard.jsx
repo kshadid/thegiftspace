@@ -103,7 +103,7 @@ export default function Dashboard() {
               <form className="grid gap-3" onSubmit={onCreate}>
                 <div>
                   <Label className="text-xs">Couple names</Label>
-                  <Input value={form.couple_names} onChange={(e) => setForm({ ...form, couple_names: e.target.value })} placeholder="Amir & Leila" required />
+                  <Input value={form.couple_names} onChange={(e) => setForm({ ...form, couple_names: e.target.value })} placeholder="Sarah & Ahmed" required />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
