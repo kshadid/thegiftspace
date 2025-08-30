@@ -63,7 +63,11 @@ export default function CreateRegistry() {
   const [manageOpen, setManageOpen] = React.useState(false);
 
   // Helpers
-  const updateRegistry = (patch) => setRegistry((r) => ({ ...r, ...patch }));
+  const updateRegistry = (patch) => {
+    setRegistry((r) => ({ ...r, ...patch }));
+    // Auto-save registry changes to backend
+    setTimeout(() => silentCloudSave(), 500); // Debounce auto-save
+  };
   const toggleSelect = (id, v) => setSelected((s) => ({ ...s, [id]: v }));
   const selectedIds = Object.keys(selected).filter((k) => selected[k]);
   const getRegId = () => localStorage.getItem("registry_id");
