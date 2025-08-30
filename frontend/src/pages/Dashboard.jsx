@@ -24,8 +24,22 @@ export default function Dashboard() {
       try {
         const items = await listMyRegistries();
         setRegistries(items || []);
-        // fetch analytics and fund counts in parallel
-        const results = await Promise.all((items || []).map(async (r) => {
+        
+        // Smart routing: Auto-redirect based on user's registry situation
+        if (items && items.length === 1) {
+          // User has exactly one registry - take them directly to manage it
+          const registry = items[0];
+          localStorage.setItem("registry_id", registry.id);
+          navigate(`/create?rid=${registry.id}`, { replace: true });
+          return;
+        } else if (!items || items.length === 0) {
+          // User has no registries - they probably just signed up, stay on dashboard to create first one
+          setRegistries([]);
+          return;
+        }
+        
+        // User has multiple registries - show dashboard for selection
+        const results = await Promise.all(items.map(async (r) => {
           const [a, f] = await Promise.all([
             getRegistryAnalytics(r.id).catch(() => ({ total: 0, count: 0 })),
             listFunds(r.id).catch(() => []),
@@ -42,7 +56,7 @@ export default function Dashboard() {
       }
     };
     load();
-  }, []);
+  }, [navigate]);
 
   const onCreate = async (e) => {
     e.preventDefault();
