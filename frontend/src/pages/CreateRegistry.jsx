@@ -53,7 +53,7 @@ export default function CreateRegistry() {
     if (getAccessToken()) {
       // Only reset to empty if we are seeing sample data
       const reg = loadRegistry();
-      if (reg && reg.coupleNames === "Amir & Leila") {
+      if (reg && (reg.coupleNames === "Amir & Leila" || reg.coupleNames === "Sample Couple")) {
         saveRegistry({ coupleNames: "", eventDate: "", location: "", slug: "", heroImage: "", currency: DEFAULT_CURRENCY });
         saveFunds([]);
       }
