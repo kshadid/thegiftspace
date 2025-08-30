@@ -50,7 +50,7 @@ function LandingPage() {
       <div 
         className="relative px-4 sm:px-6 lg:px-8 py-32 min-h-screen flex items-center"
         style={{
-          backgroundImage: 'url("https://images.unsplash.com/photo-1513553404607-988bf2703777?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njl8MHwxfHNlYXJjaHwxfHxhZXJpYWwlMjBiZWFjaHxlbnwwfHx8fDE3NTY1NDU2MzN8MA&ixlib=rb-4.1.0&q=85")',
+          backgroundImage: 'url("https://images.unsplash.com/photo-1560779751-6f55494519a8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njl8MHwxfHNlYXJjaHwxfHx0cm9waWNhbCUyMGJlYWNoJTIwcGFsbXN8ZW58MHx8fHwxNzU2NTQ2MDA5fDA&ixlib=rb-4.1.0&q=85")',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
