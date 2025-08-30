@@ -91,14 +91,14 @@ export default function Dashboard() {
         </div>
 
         <div className="flex items-center justify-between mt-8">
-          <h2 className="text-xl font-semibold">Your events</h2>
+          <h2 className="text-xl font-semibold">Your gift registries</h2>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button><Plus className="size-4 mr-2"/>New event</Button>
+              <Button><Plus className="size-4 mr-2"/>New gift registry</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[520px]">
               <DialogHeader>
-                <DialogTitle>Create a new event</DialogTitle>
+                <DialogTitle>Create a new gift registry</DialogTitle>
               </DialogHeader>
               <form className="grid gap-3" onSubmit={onCreate}>
                 <div>
