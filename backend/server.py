@@ -528,12 +528,32 @@ async def send_password_reset_email(
             "text": text_content,
         }
         
+        # Debug the API key setup
+        if not RESEND_API_KEY or RESEND_API_KEY == "":
+            logging.error(f"RESEND_API_KEY is not set or empty")
+            return None
+            
+        logging.info(f"Attempting to send email with API key: {RESEND_API_KEY[:10]}...")
+        
+        # Call Resend API
         email = resend.Emails.send(params)
-        logging.info(f"Password reset email sent to {user_email}, email_id: {email.get('id', 'unknown')}")
+        
+        # Debug the response
+        logging.info(f"Resend API response: {email}")
+        logging.info(f"Response type: {type(email)}")
+        
+        if email and isinstance(email, dict):
+            logging.info(f"Password reset email sent to {user_email}, email_id: {email.get('id', 'no_id_field')}")
+        else:
+            logging.warning(f"Unexpected Resend API response for {user_email}: {email}")
+            
         return email
         
     except Exception as e:
         logging.error(f"Failed to send password reset email to {user_email}: {str(e)}")
+        logging.error(f"Exception type: {type(e)}")
+        import traceback
+        logging.error(f"Full traceback: {traceback.format_exc()}")
         return None
 
 # ===== Auth helpers =====
