@@ -424,7 +424,7 @@ export default function CreateRegistry() {
                       <div className="grid grid-cols-3 gap-3">
                         <div>
                           <Label className="text-xs">Category</Label>
-                          <Input value={f.category} onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, category: e.target.value } : x)))} />
+                          <Input value={f.category} onChange={(e) => updateFund(f.id, { category: e.target.value })} />
                         </div>
                         <div className="col-span-2 flex items-center gap-3 justify-end">
                           <label className="inline-flex items-center gap-1 text-xs border rounded px-2 py-1 cursor-pointer ml-auto">
