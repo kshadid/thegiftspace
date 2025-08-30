@@ -37,7 +37,7 @@ function LandingPage() {
               </a>
               <a 
                 href="/auth" 
-                className="bg-rose-600 text-white px-6 py-2 rounded-full hover:bg-rose-700 transition-colors font-medium"
+                className="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition-colors font-medium shadow-sm"
               >
                 Get Started
               </a>
