@@ -116,16 +116,16 @@ export const PROFESSIONAL_COPY = {
   ]
 };
 
-// Get random fund suggestion by category
+// Get random gift fund suggestion by category
 export const getRandomFundSuggestion = (category = 'general') => {
-  const categoryFunds = PROFESSIONAL_COPY.funds[category.toLowerCase()] || PROFESSIONAL_COPY.funds.general;
+  const categoryFunds = PROFESSIONAL_COPY.giftFunds[category.toLowerCase()] || PROFESSIONAL_COPY.giftFunds.general;
   const randomIndex = Math.floor(Math.random() * categoryFunds.length);
   return categoryFunds[randomIndex];
 };
 
-// Get all funds for a category  
+// Get all gift funds for a category  
 export const getFundsByCategory = (category) => {
-  return PROFESSIONAL_COPY.funds[category.toLowerCase()] || PROFESSIONAL_COPY.funds.general;
+  return PROFESSIONAL_COPY.giftFunds[category.toLowerCase()] || PROFESSIONAL_COPY.giftFunds.general;
 };
 
 // Marketing copy for landing pages
