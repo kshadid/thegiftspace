@@ -1,6 +1,6 @@
 [build]
   # Build command
-  command = "cd frontend && npm install && npm run build"
+  command = "cd frontend && yarn install --legacy-peer-deps && yarn build"
   
   # Publish directory
   publish = "frontend/build"
