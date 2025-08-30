@@ -252,8 +252,8 @@
 
 ## metadata:
 ##   created_by: "main_agent"
-##   version: "1.5"
-##   test_sequence: 18
+##   version: "1.6"
+##   test_sequence: 19
 ##   run_ui: false
 
 ## test_plan:
