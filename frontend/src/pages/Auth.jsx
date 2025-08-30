@@ -87,7 +87,8 @@ export default function AuthPage() {
             <Link className="underline" to="/">Back to home</Link>
           </div>
         </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }
