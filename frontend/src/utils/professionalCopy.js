@@ -3,8 +3,8 @@
 export const PROFESSIONAL_COPY = {
   // Landing page
   hero: {
-    title: "Your Perfect Wedding Registry",
-    subtitle: "Create beautiful cash funds for your special day. Let friends and family contribute to what matters most.",
+    title: "Your Perfect Wedding Gift Registry",
+    subtitle: "Create beautiful gift funds for your special day. Let friends and family give meaningful gifts toward what matters most.",
     cta: "Create Your Registry"
   },
   
