@@ -12,22 +12,22 @@ export const PROFESSIONAL_COPY = {
   ],
 
   // Gift fund suggestions by category
-  funds: {
+  giftFunds: {
     honeymoon: [
       {
         title: "Romantic Maldives Escape",
-        description: "Help us create magical memories in an overwater villa surrounded by crystal-clear waters.",
-        goal: 8000
+        description: "Gift us magical memories in an overwater villa surrounded by crystal-clear waters.",
+        giftTarget: 8000
       },
       {
         title: "European Honeymoon Adventure", 
-        description: "From Paris cafés to Italian vineyards - join us on a romantic journey across Europe.",
-        goal: 6000
+        description: "From Paris cafés to Italian vineyards - help us create romantic memories across Europe.",
+        giftTarget: 6000
       },
       {
         title: "Tropical Paradise Getaway",
-        description: "Sun, sand, and endless romance in a beautiful beachfront resort.",
-        goal: 5000
+        description: "Sun, sand, and endless romance in a beautiful beachfront resort - your gift makes it possible!",
+        giftTarget: 5000
       }
     ],
     
