@@ -147,7 +147,7 @@ function LandingPage() {
           </p>
           <a 
             href="/auth" 
-            className="bg-white text-rose-600 px-8 py-4 rounded-full text-lg font-semibold hover:bg-gray-50 transition-colors shadow-lg hover:shadow-xl inline-flex items-center gap-3"
+            className="bg-white text-blue-600 px-8 py-4 rounded-full text-lg font-semibold hover:bg-gray-50 transition-colors shadow-lg hover:shadow-xl inline-flex items-center gap-3"
           >
             {PROFESSIONAL_COPY.hero.cta}
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
