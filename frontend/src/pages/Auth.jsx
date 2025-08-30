@@ -116,6 +116,11 @@ function LoginForm({ onLogin, loading }) {
       <Button aria-label="Log in" type="submit" disabled={loading} className="w-full mt-2" data-testid="login-submit">
         {loading ? "Please wait…" : "Log in"}
       </Button>
+      <div className="text-center mt-3">
+        <Link to="/auth/reset-password" className="text-sm text-muted-foreground underline hover:text-foreground">
+          Forgot your password?
+        </Link>
+      </div>
     </form>
   );
 }
