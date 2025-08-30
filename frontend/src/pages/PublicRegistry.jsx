@@ -154,28 +154,30 @@ export default function PublicRegistry() {
 
       {/* Hero Section */}
       <div className="relative">
-        {registry.hero_image && (
-          <div className="h-96 bg-cover bg-center relative" style={{ backgroundImage: `url(${registry.hero_image})` }}>
-            <div className="absolute inset-0 bg-black bg-opacity-40"></div>
-          </div>
-        )}
-        
-        <div className="relative max-w-4xl mx-auto px-4 py-12">
-          <div className="text-center text-white">
-            <h1 className="text-5xl font-bold mb-4">{registry.couple_names}</h1>
-            <div className="flex flex-wrap items-center justify-center gap-6 text-lg">
-              {registry.event_date && (
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5" />
-                  <span>{new Date(registry.event_date).toLocaleDateString()}</span>
-                </div>
-              )}
-              {registry.location && (
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
-                  <span>{registry.location}</span>
-                </div>
-              )}
+        <div 
+          className="h-64 bg-cover bg-center relative"
+          style={{
+            backgroundImage: registry.hero_image ? `url(${registry.hero_image})` : 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)'
+          }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-900/60 via-slate-900/40 to-transparent"></div>
+          <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
+            <div className="max-w-6xl mx-auto">
+              <h1 className="text-4xl md:text-5xl font-bold mb-2">{registry.couple_names}</h1>
+              <div className="flex flex-col md:flex-row md:items-center gap-4 text-lg">
+                {registry.event_date && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5" />
+                    <span>{new Date(registry.event_date).toLocaleDateString()}</span>
+                  </div>
+                )}
+                {registry.location && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-5 h-5" />
+                    <span>{registry.location}</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
