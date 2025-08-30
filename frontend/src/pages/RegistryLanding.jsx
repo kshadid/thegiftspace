@@ -21,9 +21,9 @@ export default function RegistryLanding() {
     <div className="min-h-screen">
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-border">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link to="/" className="font-semibold text-lg tracking-tight">Honeymoon Registry</Link>
+          <Link to="/" className="font-semibold text-lg tracking-tight">The giftspace</Link>
           <nav className="flex items-center gap-3">
-            <Link to="/r/amir-leila" className="text-sm text-muted-foreground hover:text-foreground">Sample</Link>
+            <Link to="/r/sarah-ahmed" className="text-sm text-muted-foreground hover:text-foreground">Preview</Link>
             <Button onClick={() => navigate("/dashboard")}>Get Started</Button>
           </nav>
         </div>
