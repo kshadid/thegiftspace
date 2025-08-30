@@ -374,7 +374,7 @@ export default function PublicRegistry() {
                           className="w-full"
                         >
                           <Heart className="w-4 h-4 mr-2" />
-                          {submitting ? PROFESSIONAL_COPY.messages.loading.saving : `Contribute ${contributionAmount ? formatCurrency(parseFloat(contributionAmount), registry.currency) : ''}`}
+                          {submitting ? MARKETING_COPY.messages.loading.saving : `Send Gift ${contributionAmount ? formatCurrency(parseFloat(contributionAmount), registry.currency) : ''}`}
                         </Button>
                       </div>
                     </DialogContent>
