@@ -115,7 +115,7 @@ export default function RegistryLanding() {
       <footer className="py-10">
         <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">Dubai-first. Launching globally soon.</p>
-          <div className="text-sm text-muted-foreground">© {new Date().getFullYear()} Cash Registry Preview</div>
+          <div className="text-sm text-muted-foreground">© {new Date().getFullYear()} The giftspace</div>
         </div>
       </footer>
     </div>
