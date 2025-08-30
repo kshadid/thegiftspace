@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { I18nProvider } from './i18n';
 import { Toaster } from './components/ui/toaster';
 import AuthPage from './pages/Auth';
+import PasswordReset from './pages/PasswordReset';
 import Dashboard from './pages/Dashboard';
 import CreateRegistry from './pages/CreateRegistry';
 import PublicRegistry from './pages/PublicRegistry';
