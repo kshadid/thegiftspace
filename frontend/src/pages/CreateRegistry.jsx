@@ -349,7 +349,7 @@ export default function CreateRegistry() {
       {/* Gifts grid */}
       <div className="max-w-6xl mx-auto px-4 pb-20">
         <div className="mt-6 flex items-center justify-between">
-          <h2 className="text-xl font-semibold tracking-tight">Gifts</h2>
+          <h2 className="text-xl font-semibold tracking-tight">Gift ideas</h2>
           <div className="flex items-center gap-2">
             <Button variant="secondary" onClick={() => setFunds((all) => all.map((f) => (selectedIds.includes(f.id) ? { ...f, visible: true } : f)))} disabled={selectedIds.length === 0}>Show selected</Button>
             <Button variant="secondary" onClick={() => setFunds((all) => all.map((f) => (selectedIds.includes(f.id) ? { ...f, visible: false } : f)))} disabled={selectedIds.length === 0}>Hide selected</Button>
