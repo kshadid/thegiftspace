@@ -166,9 +166,24 @@ export default function CreateRegistry() {
     const id = `fund_${Date.now()}`;
     const nextOrder = funds.length;
     lastAddedId.current = id;
+    
+    // Use professional suggestion
+    const suggestion = getRandomFundSuggestion("general");
+    const defaultImage = getRandomImageByCategory("general");
+    
     setFunds((f) => [
       ...f,
-      { id, title: "New Gift", description: "", goal: 1000, coverUrl: "https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=1200&auto=format&fit=crop", category: "Experience", visible: true, order: nextOrder, pinned: false },
+      { 
+        id, 
+        title: suggestion.title, 
+        description: suggestion.description, 
+        goal: suggestion.goal, 
+        coverUrl: defaultImage.url, 
+        category: "Experience", 
+        visible: true, 
+        order: nextOrder, 
+        pinned: false 
+      },
     ]);
     setTimeout(() => { const el = document.getElementById(`fund-${id}`); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" }); }, 50);
   };
