@@ -171,6 +171,7 @@ function App() {
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/auth/reset-password" element={<PasswordReset />} />
               <Route path="/create" element={<CreateRegistry />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/r/:slug" element={<PublicRegistry />} />
