@@ -123,7 +123,7 @@ export default function PublicRegistry() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-100 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-4">
           <div className="text-6xl mb-4">💔</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Registry Not Found</h1>
