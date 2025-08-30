@@ -156,6 +156,11 @@ function LandingPage() {
 }
 
 function App() {
+  // Initialize analytics
+  React.useEffect(() => {
+    initAnalytics();
+  }, []);
+
   return (
     <I18nProvider>
       <AuthProvider>
