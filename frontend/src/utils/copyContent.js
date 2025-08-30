@@ -34,13 +34,13 @@ export const PROFESSIONAL_COPY = {
     travel: [
       {
         title: "Weekend City Escapes",
-        description: "Help us explore new cities and create adventures together throughout our first year.",
-        goal: 3000
+        description: "Gift us amazing city adventures and memories throughout our first year together.",
+        giftTarget: 3000
       },
       {
         title: "Anniversary Adventures",
-        description: "Annual trips to celebrate our love and explore the world hand in hand.",
-        goal: 4500
+        description: "Annual trips to celebrate our love - your gift helps us explore the world hand in hand.",
+        giftTarget: 4500
       }
     ],
     
