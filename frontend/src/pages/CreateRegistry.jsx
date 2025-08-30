@@ -249,7 +249,7 @@ export default function CreateRegistry() {
                   <div className="space-y-3">
                     <div>
                       <Label>Couple names</Label>
-                      <Input value={registry.coupleNames || ""} onChange={(e) => updateRegistry({ coupleNames: e.target.value })} placeholder="Amir & Leila" />
+                      <Input value={registry.coupleNames || ""} onChange={(e) => updateRegistry({ coupleNames: e.target.value })} placeholder="Sarah & Ahmed" />
                     </div>
                     <div>
                       <Label>Wedding date</Label>
