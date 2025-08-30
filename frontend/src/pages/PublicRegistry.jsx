@@ -142,7 +142,16 @@ export default function PublicRegistry() {
   const categories = [...new Set(funds.map(f => f.category || "general"))];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-100">
+      {/* Header */}
+      <div className="bg-white/90 backdrop-blur-sm border-b sticky top-0 z-40 shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+          <a href="/" className="font-semibold text-lg text-blue-600">
+            The giftspace
+          </a>
+        </div>
+      </div>
+
       {/* Hero Section */}
       <div className="relative">
         {registry.hero_image && (
