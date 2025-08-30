@@ -224,6 +224,17 @@
 ##         -working: true
 ##         -agent: "testing"
 ##         -comment: "CRITICAL BUG FIX VERIFICATION COMPLETED SUCCESSFULLY! LOGIN-TO-DASHBOARD FLOW: Both new user registration and existing user login correctly redirect to /dashboard (not /create anymore). DASHBOARD FUNCTIONALITY: All required elements working - statistics display (Total raised, Contributions, Events), 'New event' button functional, 'Your events' section visible, user name in header, professional branding maintained. PROFESSIONAL PLACEHOLDERS: 'Sarah & Ahmed' placeholders implemented correctly (no 'Amir & Leila' found). EVENT CREATION: 'New event' dialog opens properly, form submission redirects to management page, navigation back to dashboard works. COMPLETE USER JOURNEY: Landing → Sign in → Dashboard → Create event → Manage event flow fully functional. MOBILE RESPONSIVE: Dashboard maintains functionality on mobile viewport. Minor: Logout redirect needs improvement but core authentication/authorization works correctly. The critical dashboard access bug has been successfully fixed!"
+##   - task: "Gifting Terminology Transformation"
+##     implemented: true
+##     working: false
+##     file: "/app/frontend/src/pages/Dashboard.jsx, /app/frontend/src/pages/CreateRegistry.jsx, /app/frontend/src/pages/PublicRegistry.jsx"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: false
+##     status_history:
+##         -working: false
+##         -agent: "testing"
+##         -comment: "COMPREHENSIVE GIFTING TERMINOLOGY TRANSFORMATION TESTING COMPLETED - 70% SUCCESS RATE. ✅ WORKING: Landing page hero title 'Your Perfect Wedding Gift Registry', subtitle with 'gift funds' and 'meaningful gifts', 'Beautiful Wedding Registries' tagline, gift-focused CTA buttons. Dashboard 'New gift registry' button and 'Your gift registries' section. Registry creation dialog 'Create a new gift registry' and 'Create gift registry' button. Gift management 'Add gift idea' button, 'Gift ideas' section, 'Manage gift registry' dialog. No problematic fundraising terminology found. ❌ CRITICAL ISSUES: Dashboard statistics cards still show old terminology instead of 'Total received in gifts', 'Gifts received', 'Gift registries'. Analytics cards in gift management page use old terms instead of gift terminology. Public registry missing 'Send a Gift' buttons and proper gift dialog with 'Send a Beautiful Gift' title and 'Your gift helps make their dreams come true' subtitle. Search placeholder should be 'Search gift ideas' not generic search. The transformation is partially complete but needs updates to statistics displays and public gift-giving experience to fully feel like a gifting platform."
 
 ## metadata:
 ##   created_by: "main_agent"
