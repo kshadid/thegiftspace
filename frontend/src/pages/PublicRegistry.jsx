@@ -267,7 +267,7 @@ export default function PublicRegistry() {
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button 
-                        className="w-full mt-4 group-hover:bg-rose-600 transition-colors"
+                        className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
                         onClick={() => setSelectedFund(fund)}
                       >
                         <Gift className="w-4 h-4 mr-2" />
