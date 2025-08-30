@@ -129,7 +129,7 @@ export default function Dashboard() {
 
         <div className="grid md:grid-cols-3 gap-6 mt-4">
           {registries.length === 0 ? (
-            <div className="md:col-span-3 p-8 rounded-lg border text-center text-muted-foreground">No events yet. Create your first one.</div>
+            <div className="md:col-span-3 p-8 rounded-lg border text-center text-muted-foreground">No gift registries yet. Create your first one and start receiving beautiful gifts!</div>
           ) : (
             registries.map((r) => (
               <Card key={r.id} className="overflow-hidden">
