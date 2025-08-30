@@ -401,8 +401,8 @@ export default function CreateRegistry() {
                               <Input type="number" value={goalDraft} onChange={(e) => setGoalDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') commitGoal(f.id); if (e.key === 'Escape') cancelGoal(); }} onBlur={() => commitGoal(f.id)} className="w-28 h-8 text-xs" />
                             </div>
                           ) : (
-                            <button className="text-xs border rounded px-2 py-1 hover:bg-accent" onClick={() => startEditGoal(f)} title="Edit goal">
-                              Goal: {registry.currency || DEFAULT_CURRENCY} {Number(f.goal || 0).toLocaleString()}
+                            <button className="text-xs border rounded px-2 py-1 hover:bg-accent" onClick={() => startEditGoal(f)} title="Edit gift target">
+                              Target: {registry.currency || DEFAULT_CURRENCY} {Number(f.goal || 0).toLocaleString()}
                             </button>
                           )}
                         </div>
