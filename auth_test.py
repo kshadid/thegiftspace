@@ -532,7 +532,7 @@ class AuthenticationTester:
         
         # Test database connection
         print("--- Testing Database Connection ---")
-        if self.db:
+        if self.db is not None:
             try:
                 # Try to ping the database
                 self.mongo_client.admin.command('ping')
