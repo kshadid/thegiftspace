@@ -174,36 +174,11 @@ export default function PublicRegistry() {
 
       {/* Registry Content */}
       <div className="max-w-6xl mx-auto px-4 py-12">
-        {/* Progress Summary */}
-        <Card className="mb-8">
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-              <div>
-                <div className="text-3xl font-bold text-rose-600">
-                  {formatCurrency(totals.raised, registry.currency)}
-                </div>
-                <p className="text-gray-600">Total Raised</p>
-              </div>
-              <div>
-                <div className="text-3xl font-bold text-gray-900">
-                  {formatCurrency(totals.goal, registry.currency)}
-                </div>
-                <p className="text-gray-600">Total Goal</p>
-              </div>
-              <div>
-                <div className="text-3xl font-bold text-green-600">
-                  {Math.round((totals.raised / totals.goal) * 100) || 0}%
-                </div>
-                <p className="text-gray-600">Complete</p>
-              </div>
-            </div>
-            {totals.goal > 0 && (
-              <div className="mt-6">
-                <Progress value={(totals.raised / totals.goal) * 100} className="h-3" />
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Beautiful header with wedding info */}
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-semibold text-slate-800 mb-2">Choose a Gift to Give</h2>
+          <p className="text-slate-600">Select any gift fund below to contribute toward {registry.couple_names}'s dreams</p>
+        </div>
 
         {/* Search and Filter */}
         <div className="mb-6 flex flex-col sm:flex-row gap-4">
