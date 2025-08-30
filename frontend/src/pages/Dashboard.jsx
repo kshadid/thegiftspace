@@ -77,15 +77,15 @@ export default function Dashboard() {
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="grid md:grid-cols-3 gap-4">
           <Card>
-            <CardHeader><CardTitle>Total raised</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Total received in gifts</CardTitle></CardHeader>
             <CardContent className="text-2xl font-semibold">{formatCurrency(stats.totalRaised)}</CardContent>
           </Card>
           <Card>
-            <CardHeader><CardTitle>Contributions</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Gifts received</CardTitle></CardHeader>
             <CardContent className="text-2xl font-semibold">{stats.totalContribs}</CardContent>
           </Card>
           <Card>
-            <CardHeader><CardTitle>Events</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Gift registries</CardTitle></CardHeader>
             <CardContent className="text-2xl font-semibold">{registries.length}</CardContent>
           </Card>
         </div>
