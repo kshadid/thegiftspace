@@ -142,7 +142,7 @@ function LandingPage() {
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
             Ready to create your perfect registry?
           </h2>
-          <p className="text-xl text-rose-100 mb-12 leading-relaxed">
+          <p className="text-xl text-blue-100 mb-12 leading-relaxed">
             Join thousands of couples who've chosen The giftspace for their special day
           </p>
           <a 
