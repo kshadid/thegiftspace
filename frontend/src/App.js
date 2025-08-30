@@ -137,7 +137,7 @@ function LandingPage() {
       </div>
 
       {/* CTA Section */}
-      <div className="py-24 bg-gradient-to-r from-rose-600 to-pink-600">
+      <div className="py-24 bg-gradient-to-r from-blue-600 to-indigo-600">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
             Ready to create your perfect registry?
