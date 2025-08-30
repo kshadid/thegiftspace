@@ -229,21 +229,19 @@ export default function PublicRegistry() {
                 className="pl-12 h-12 border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-xl text-base"
               />
             </div>
-            <div className="flex items-center gap-2">
-              <Filter className="w-5 h-5 text-gray-600" />
-              <select 
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="h-12 px-4 border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-xl text-base min-w-48"
-              >
-                <option value="all">All Categories</option>
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-full sm:w-48 h-12 border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-xl">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
                     {MARKETING_COPY.giftFundCategories[cat] || cat}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
-            </div>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
