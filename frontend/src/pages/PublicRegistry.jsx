@@ -360,7 +360,7 @@ export default function PublicRegistry() {
                             <Label htmlFor="message">Message (optional)</Label>
                             <Textarea
                               id="message"
-                              placeholder={PROFESSIONAL_COPY.contribute.messagePlaceholder}
+                              placeholder={MARKETING_COPY.contribute.messagePlaceholder}
                               value={contributionMessage}
                               onChange={(e) => setContributionMessage(e.target.value)}
                               rows={3}
