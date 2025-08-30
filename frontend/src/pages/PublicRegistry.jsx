@@ -251,42 +251,61 @@ export default function PublicRegistry() {
             const progress = fund.goal > 0 ? (fund.raised / fund.goal) * 100 : 0;
             
             return (
-              <Card key={fund.id} className="group hover:shadow-lg transition-shadow">
+              <Card key={fund.id} className="group hover:shadow-xl hover:scale-105 transition-all duration-300 border-0 shadow-lg rounded-3xl overflow-hidden bg-gradient-to-br from-white to-gray-50">
                 {fund.cover_url && (
-                  <div className="h-48 bg-cover bg-center rounded-t-lg" style={{ backgroundImage: `url(${fund.cover_url})` }}>
-                    <div className="h-full bg-black bg-opacity-20 rounded-t-lg flex items-end">
-                      <div className="p-4 text-white">
-                        <Badge variant="secondary" className="bg-white/90 text-gray-900">
-                          {MARKETING_COPY.giftFundCategories[fund.category] || fund.category}
-                        </Badge>
-                      </div>
+                  <div className="h-56 bg-cover bg-center relative overflow-hidden" style={{ backgroundImage: `url(${fund.cover_url})` }}>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+                    <div className="absolute top-4 left-4">
+                      <Badge className="bg-white/95 backdrop-blur-sm text-gray-800 border-0 shadow-sm px-3 py-1 rounded-full">
+                        <Heart className="w-3 h-3 mr-1 text-red-500" />
+                        {MARKETING_COPY.giftFundCategories[fund.category] || fund.category}
+                      </Badge>
+                    </div>
+                    <div className="absolute bottom-4 left-4 right-4">
+                      <h3 className="text-2xl font-bold text-white mb-1 leading-tight">{fund.title}</h3>
                     </div>
                   </div>
                 )}
                 
                 <CardContent className="p-6">
-                  <div className="mb-4">
-                    <h3 className="text-xl font-semibold mb-2">{fund.title}</h3>
-                    {fund.description && (
-                      <p className="text-gray-600 text-sm">{fund.description}</p>
-                    )}
-                  </div>
+                  {fund.description && (
+                    <p className="text-gray-600 text-sm leading-relaxed mb-6">{fund.description}</p>
+                  )}
                   
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-lg font-bold text-rose-600">
-                        {formatCurrency(fund.raised, registry.currency)}
-                      </span>
-                      <span className="text-gray-600">
-                        of {formatCurrency(fund.goal, registry.currency)}
-                      </span>
-                    </div>
-                    
-                    <Progress value={progress} className="h-2" />
-                    
-                    <div className="flex justify-between items-center text-sm text-gray-600">
-                      <span>{fund.contributions_count} contributors</span>
-                      <span>{Math.round(progress)}% funded</span>
+                  <div className="space-y-4">
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-2xl font-bold text-blue-600">
+                          {formatCurrency(fund.raised, registry.currency)}
+                        </span>
+                        <span className="text-gray-500 text-sm">
+                          Goal: {formatCurrency(fund.goal, registry.currency)}
+                        </span>
+                      </div>
+                      
+                      <div className="mb-3">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm text-gray-600">Progress</span>
+                          <span className="text-sm font-medium text-blue-600">{Math.round(progress)}%</span>
+                        </div>
+                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500"
+                            style={{ width: `${Math.min(progress, 100)}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between text-sm text-gray-600">
+                        <div className="flex items-center gap-1">
+                          <Users className="w-4 h-4" />
+                          <span>{fund.contributions_count || 0} supporters</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Gift className="w-4 h-4" />
+                          <span>Gift fund</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   
