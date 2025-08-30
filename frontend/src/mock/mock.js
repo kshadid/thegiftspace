@@ -152,17 +152,17 @@ export function validateFund(fund) {
 
 // Professional messaging
 export function getWelcomeMessage(user) {
-  return `${PROFESSIONAL_COPY.registry.welcome} Let's create something beautiful for your special day.`;
+  return `Welcome to The giftspace! Let's create something beautiful for your special day.`;
 }
 
 export function getSuccessMessage(action) {
   const messages = {
-    'registry_created': PROFESSIONAL_COPY.messages.success.registryCreated,
-    'fund_added': PROFESSIONAL_COPY.messages.success.fundAdded,
-    'settings_saved': PROFESSIONAL_COPY.messages.success.settingsSaved
+    'registry_created': 'Your beautiful registry has been created!',
+    'fund_added': 'New fund has been added successfully!',
+    'settings_saved': 'Your settings have been saved!'
   };
   
-  return messages[action] || PROFESSIONAL_COPY.messages.success.registryCreated;
+  return messages[action] || 'Changes saved successfully!';
 }
 
 export { THEME_PRESETS };
