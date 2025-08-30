@@ -359,7 +359,7 @@ export default function CreateRegistry() {
 
         <div className="mt-4 grid md:grid-cols-3 gap-6">
           {funds.length === 0 ? (
-            <div className="md:col-span-3 p-10 rounded-lg border text-center text-muted-foreground">No gifts yet. Click "Add gift" to begin.</div>
+            <div className="md:col-span-3 p-10 rounded-lg border text-center text-muted-foreground">No gift ideas yet. Click "Add gift idea" to begin creating your wishlist!</div>
           ) : (
             funds.map((f) => (
               <div key={f.id} id={`fund-${f.id}`} draggable onDragStart={onDragStart(f.id)} onDragOver={onDragOver(f.id)}>
