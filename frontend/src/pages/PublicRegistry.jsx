@@ -142,41 +142,59 @@ export default function PublicRegistry() {
   const categories = [...new Set(funds.map(f => f.category || "general"))];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-100">
-      {/* Header */}
-      <div className="bg-white/90 backdrop-blur-sm border-b sticky top-0 z-40 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="font-semibold text-lg text-blue-600">
-            The giftspace
-          </Link>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+      {/* Modern Header */}
+      <div className="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-40 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
+                <Gift className="w-4 h-4 text-white" />
+              </div>
+              <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                The giftspace
+              </span>
+            </Link>
+            <div className="text-sm text-gray-500">
+              Secure & trusted gifting platform
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Hero Section */}
-      <div className="relative">
+      {/* Elegant Hero Section */}
+      <div className="relative overflow-hidden">
         <div 
-          className="h-64 bg-cover bg-center relative"
+          className="h-80 bg-cover bg-center relative"
           style={{
-            backgroundImage: registry.hero_image ? `url(${registry.hero_image})` : 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)'
+            backgroundImage: registry.hero_image ? `url(${registry.hero_image})` : 'url("https://images.unsplash.com/photo-1544945582-052b29cd29e4?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzh8MHwxfHNlYXJjaHwxfHx0cm9waWNhbCUyMHBhcmFkaXNlfGVufDB8fHx8MTc1NjU1MDg2M3ww&ixlib=rb-4.1.0&q=85")'
           }}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-900/60 via-slate-900/40 to-transparent"></div>
-          <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
-            <div className="max-w-6xl mx-auto">
-              <h1 className="text-4xl md:text-5xl font-bold mb-2">{registry.couple_names}</h1>
-              <div className="flex flex-col md:flex-row md:items-center gap-4 text-lg">
-                {registry.event_date && (
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5" />
-                    <span>{new Date(registry.event_date).toLocaleDateString()}</span>
-                  </div>
-                )}
-                {registry.location && (
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-5 h-5" />
-                    <span>{registry.location}</span>
-                  </div>
-                )}
+          {/* Premium overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-900/80 via-slate-900/50 to-slate-900/30"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+          
+          {/* Elegant content */}
+          <div className="absolute bottom-0 left-0 right-0 p-8">
+            <div className="max-w-7xl mx-auto">
+              <div className="text-white">
+                <h1 className="text-5xl md:text-6xl font-bold mb-4 tracking-tight">
+                  {registry.couple_names}
+                </h1>
+                <div className="flex flex-col md:flex-row md:items-center gap-6 text-lg">
+                  {registry.event_date && (
+                    <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
+                      <Calendar className="w-5 h-5" />
+                      <span className="font-medium">{new Date(registry.event_date).toLocaleDateString()}</span>
+                    </div>
+                  )}
+                  {registry.location && (
+                    <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
+                      <MapPin className="w-5 h-5" />
+                      <span className="font-medium">{registry.location}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
