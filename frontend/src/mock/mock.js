@@ -1,4 +1,4 @@
-import { PROFESSIONAL_COPY, getRandomFundSuggestion } from "../utils/professionalCopy";
+import { PROFESSIONAL_COPY, getRandomFundSuggestion } from "../utils/copyContent";
 import { getRandomRegistryImage, getRandomImageByCategory } from "../utils/defaultImages";
 
 // Enhanced mock data with professional copy and beautiful images
