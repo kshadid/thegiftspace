@@ -131,9 +131,9 @@ export const getFundsByCategory = (category) => {
 // Marketing copy for landing pages
 export const MARKETING_COPY = {
   hero: {
-    headline: "Create Your Perfect Wedding Cash Registry",
-    subheadline: "Turn your dreams into reality with beautifully crafted gift funds that make it easy for guests to contribute to what matters most.",
-    cta: "Start Your Registry"
+    headline: "Create Your Perfect Wedding Gift Registry",
+    subheadline: "Turn your dreams into reality with beautifully crafted gift funds that make it easy for guests to give meaningful gifts.",
+    cta: "Start Your Gift Registry"
   },
   
   features: [
