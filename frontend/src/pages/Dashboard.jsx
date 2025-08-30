@@ -120,7 +120,7 @@ export default function Dashboard() {
                   <Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value.replace(/\s+/g, "-").toLowerCase() })} placeholder="sarah-ahmed" required />
                 </div>
                 <div className="pt-2">
-                  <Button type="submit" disabled={loading}>{loading ? "Creating…" : "Create event"}</Button>
+                  <Button type="submit" disabled={loading}>{loading ? "Creating…" : "Create gift registry"}</Button>
                 </div>
               </form>
             </DialogContent>
