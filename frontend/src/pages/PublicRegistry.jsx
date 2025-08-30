@@ -285,7 +285,7 @@ export default function PublicRegistry() {
                         onClick={() => setSelectedFund(fund)}
                       >
                         <Gift className="w-4 h-4 mr-2" />
-                        {PROFESSIONAL_COPY.buttons.contribute}
+                        {MARKETING_COPY.buttons.contribute}
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-md">
