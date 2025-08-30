@@ -32,15 +32,34 @@ function LandingPage() {
               <span className="ml-3 text-sm text-gray-600">Beautiful Wedding Registries</span>
             </div>
             <div className="flex items-center gap-4">
-              <a href="/auth" className="text-slate-600 hover:text-slate-900 font-medium">
-                Sign In
-              </a>
-              <a 
-                href="/auth" 
-                className="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition-colors font-medium shadow-sm"
-              >
-                Get Started
-              </a>
+              {user ? (
+                // Authenticated user navigation
+                <>
+                  <span className="text-slate-600 font-medium">Welcome, {user.name}</span>
+                  <a href="/dashboard" className="text-slate-600 hover:text-slate-900 font-medium">
+                    Dashboard
+                  </a>
+                  <button 
+                    onClick={logout}
+                    className="bg-slate-600 text-white px-4 py-2 rounded-full hover:bg-slate-700 transition-colors font-medium"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                // Unauthenticated user navigation
+                <>
+                  <a href="/auth" className="text-slate-600 hover:text-slate-900 font-medium">
+                    Sign In
+                  </a>
+                  <a 
+                    href="/auth" 
+                    className="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition-colors font-medium shadow-sm"
+                  >
+                    Get Started
+                  </a>
+                </>
+              )}
             </div>
           </div>
         </div>
