@@ -76,9 +76,9 @@ export function createNewFund(category = 'general') {
   
   return {
     id: Date.now().toString(),
-    title: suggestion || PROFESSIONAL_COPY.funds.placeholders.title,
-    description: PROFESSIONAL_COPY.funds.placeholders.description,
-    goal: parseFloat(PROFESSIONAL_COPY.funds.placeholders.goal),
+    title: suggestion.title || "Special Fund",
+    description: suggestion.description || "Help us create unforgettable memories together",
+    goal: suggestion.goal || 3000,
     category: category,
     cover_url: image.url,
     visible: true,
