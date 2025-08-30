@@ -17,11 +17,6 @@ import { initAnalytics } from './lib/analytics';
 import { PROFESSIONAL_COPY } from './utils/professionalCopy';
 import './App.css';
 
-// Initialize analytics
-React.useEffect(() => {
-  initAnalytics();
-}, []);
-
 // Landing Page Component with Professional Design
 function LandingPage() {
   return (
