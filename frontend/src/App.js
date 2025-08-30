@@ -171,7 +171,7 @@ function App() {
               <Route path="/" element={<LandingPage />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/create" element={<CreateRegistry />} />
-              <Route path="/dashboard" element={<Navigate to="/create" replace />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/r/:slug" element={<PublicRegistry />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/admin/r/:id" element={<AdminRegistryDetail />} />
