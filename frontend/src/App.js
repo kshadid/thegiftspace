@@ -32,7 +32,7 @@ function LandingPage() {
               <span className="ml-3 text-sm text-gray-600">Beautiful Wedding Registries</span>
             </div>
             <div className="flex items-center gap-4">
-              <a href="/auth" className="text-gray-600 hover:text-gray-900 font-medium">
+              <a href="/auth" className="text-slate-600 hover:text-slate-900 font-medium">
                 Sign In
               </a>
               <a 
