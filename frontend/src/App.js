@@ -46,44 +46,29 @@ function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-          <div className="text-center">
-            <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-8">
-              {PROFESSIONAL_COPY.hero.title}
+      {/* Hero Section with Beautiful Beach Background */}
+      <div 
+        className="relative px-4 sm:px-6 lg:px-8 py-32 min-h-screen flex items-center"
+        style={{
+          backgroundImage: 'url("https://images.unsplash.com/photo-1718152220111-6e1208d984bc?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDN8MHwxfHNlYXJjaHwxfHxmaWppJTIwYmVhY2h8ZW58MHx8fHwxNzU2NTQ0NzQ3fDA&ixlib=rb-4.1.0&q=85")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
+        {/* Elegant overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-900/70 via-slate-900/50 to-transparent"></div>
+        
+        <div className="relative text-left max-w-4xl mx-auto">
+          <div className="text-white">
+            <h1 className="text-6xl font-bold mb-6 leading-tight">
+              Your Perfect Wedding<br />
+              <span className="text-blue-300">Gift Registry</span>
             </h1>
-            <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
-              {PROFESSIONAL_COPY.hero.subtitle}
+            <p className="text-xl mb-8 max-w-2xl text-slate-200 leading-relaxed">
+              Create beautiful gift funds for your special day. Let friends and 
+              family give meaningful gifts toward your dream honeymoon and future together.
             </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <a 
-                href="/auth" 
-                className="bg-rose-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-rose-700 transition-colors shadow-lg hover:shadow-xl"
-              >
-                {PROFESSIONAL_COPY.hero.cta}
-              </a>
-              <a 
-                href="#features" 
-                className="text-gray-600 hover:text-gray-900 font-medium flex items-center gap-2"
-              >
-                Learn More
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </a>
-            </div>
-          </div>
-        </div>
-
-        {/* Hero Background Elements */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-          <div className="absolute top-20 left-10 w-20 h-20 bg-rose-200 rounded-full opacity-60 animate-pulse"></div>
-          <div className="absolute top-40 right-20 w-32 h-32 bg-pink-200 rounded-full opacity-40 animate-pulse delay-1000"></div>
-          <div className="absolute bottom-20 left-1/4 w-16 h-16 bg-purple-200 rounded-full opacity-50 animate-pulse delay-500"></div>
-        </div>
-      </div>
 
       {/* Features Section */}
       <div id="features" className="py-24 bg-white">
