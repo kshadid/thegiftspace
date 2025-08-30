@@ -290,8 +290,8 @@ export default function PublicRegistry() {
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-md">
                       <DialogHeader>
-                        <DialogTitle>{PROFESSIONAL_COPY.contribute.title}</DialogTitle>
-                        <p className="text-gray-600">{PROFESSIONAL_COPY.contribute.subtitle}</p>
+                        <DialogTitle>{MARKETING_COPY.contribute.title}</DialogTitle>
+                        <p className="text-gray-600">{MARKETING_COPY.contribute.subtitle}</p>
                       </DialogHeader>
                       
                       <div className="space-y-4">
