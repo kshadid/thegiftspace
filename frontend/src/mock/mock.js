@@ -53,14 +53,14 @@ export function saveFunds(funds) {
   localStorage.setItem('wedding_funds', JSON.stringify(funds));
 }
 
-// Professional fund suggestions based on category
+// Professional gift fund suggestions based on category
 export function getFundSuggestions(category = 'general') {
-  const categoryFunds = PROFESSIONAL_COPY.funds[category] || PROFESSIONAL_COPY.funds.general;
+  const categoryFunds = PROFESSIONAL_COPY.giftFunds[category] || PROFESSIONAL_COPY.giftFunds.general;
   return categoryFunds.map((fund, index) => ({
     id: `suggestion_${category}_${index}`,
     title: fund.title,
     description: fund.description,
-    goal: fund.goal,
+    goal: fund.giftTarget,
     category: category,
     cover_url: getRandomImageByCategory(category).url,
     visible: true,
