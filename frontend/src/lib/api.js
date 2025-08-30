@@ -66,7 +66,7 @@ export async function listFunds(registryId) {
   return data;
 }
 export async function getPublicRegistry(slug) {
-  const { data } = await api.get(`/registries/${slug}/public`);
+  const { data } = await api.get(`/public/registries/${slug}`);
   return data;
 }
 
