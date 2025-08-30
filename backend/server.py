@@ -849,37 +849,70 @@ async def delete_fund(registry_id: str, fund_id: str, current: UserPublic = Depe
 
 # Add bulk upsert endpoint for frontend compatibility
 @api_router.post("/registries/{registry_id}/funds/bulk_upsert")
-async def bulk_upsert_funds(registry_id: str, funds: List[FundIn], current: UserPublic = Depends(get_user_from_token)):
+async def bulk_upsert_funds(registry_id: str, request: Request, current: UserPublic = Depends(get_user_from_token)):
     reg = await db.registries.find_one({"id": registry_id})
     if not reg:
         raise HTTPException(status_code=404, detail="Registry not found")
     if not is_owner_or_collab(reg, current.id):
         raise HTTPException(status_code=403, detail="Access denied")
     
-    results = []
-    for fund_data in funds:
-        if fund_data.id:
-            # Update existing fund
-            existing_fund = await db.funds.find_one({"id": fund_data.id, "registry_id": registry_id})
-            if existing_fund:
-                update_data = fund_data.model_dump(exclude={'id'})
-                update_data["updated_at"] = datetime.utcnow()
-                await db.funds.update_one({"id": fund_data.id}, {"$set": update_data})
-                updated_fund = await db.funds.find_one({"id": fund_data.id})
-                if updated_fund:
-                    updated_fund.pop("_id", None)
-                    results.append(Fund(**updated_fund))
+    # Get raw JSON data to handle flexible frontend formats
+    try:
+        raw_data = await request.json()
+        
+        # Handle both array and single object formats
+        if isinstance(raw_data, list):
+            funds_data = raw_data
+        elif isinstance(raw_data, dict):
+            funds_data = [raw_data]  # Single fund object
         else:
-            # Create new fund
-            if fund_data.order is None:
-                max_order = await db.funds.find({"registry_id": registry_id}).sort("order", -1).limit(1).to_list(1)
-                fund_data.order = (max_order[0].get("order", 0) + 1) if max_order else 1
+            raise HTTPException(status_code=400, detail="Invalid data format")
+        
+        results = []
+        for fund_item in funds_data:
+            # Extract fund data and handle flexible field names
+            fund_data = {}
             
-            fund = Fund(**fund_data.model_dump(exclude={'id'}), registry_id=registry_id)
-            await db.funds.insert_one(fund.model_dump())
-            results.append(fund)
-    
-    return results
+            # Map common field variations
+            fund_data["id"] = fund_item.get("id") or fund_item.get("fund_id")
+            fund_data["title"] = fund_item.get("title", "")
+            fund_data["description"] = fund_item.get("description", "")
+            fund_data["goal"] = float(fund_item.get("goal", 0))
+            fund_data["cover_url"] = fund_item.get("cover_url") or fund_item.get("coverUrl")
+            fund_data["category"] = fund_item.get("category", "")
+            fund_data["visible"] = bool(fund_item.get("visible", True))
+            fund_data["order"] = fund_item.get("order")
+            fund_data["pinned"] = bool(fund_item.get("pinned", False))
+            
+            if fund_data["id"]:
+                # Update existing fund
+                existing_fund = await db.funds.find_one({"id": fund_data["id"], "registry_id": registry_id})
+                if existing_fund:
+                    update_data = {k: v for k, v in fund_data.items() if k != "id" and v is not None}
+                    update_data["updated_at"] = datetime.utcnow()
+                    await db.funds.update_one({"id": fund_data["id"]}, {"$set": update_data})
+                    updated_fund = await db.funds.find_one({"id": fund_data["id"]})
+                    if updated_fund:
+                        updated_fund.pop("_id", None)
+                        results.append(Fund(**updated_fund))
+            else:
+                # Create new fund
+                if fund_data["order"] is None:
+                    max_order = await db.funds.find({"registry_id": registry_id}).sort("order", -1).limit(1).to_list(1)
+                    fund_data["order"] = (max_order[0].get("order", 0) + 1) if max_order else 1
+                
+                # Create Fund object excluding None values
+                fund_dict = {k: v for k, v in fund_data.items() if k != "id" and v is not None}
+                fund = Fund(**fund_dict, registry_id=registry_id)
+                await db.funds.insert_one(fund.model_dump())
+                results.append(fund)
+        
+        return results
+        
+    except Exception as e:
+        logging.error(f"bulk_upsert error: {str(e)}")
+        # Return a more helpful error message
+        raise HTTPException(status_code=400, detail=f"Data processing error: {str(e)}")
 
 # --- Contributions ---
 @api_router.post("/contributions", response_model=Contribution, status_code=201)
