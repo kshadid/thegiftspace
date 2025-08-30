@@ -82,14 +82,14 @@ export const PROFESSIONAL_COPY = {
     
     general: [
       {
-        title: "Our Future Together Fund",
-        description: "Help us build the foundation for our dreams, big and small.",
-        goal: 5000
+        title: "Our Future Together Gift Fund",
+        description: "Your gifts help us build the foundation for our dreams, big and small.",
+        giftTarget: 5000
       },
       {
-        title: "Special Occasions Fund",
-        description: "Birthdays, anniversaries, and surprise celebrations throughout our journey.",
-        goal: 3000
+        title: "Special Occasions Gift Fund",
+        description: "Gift us beautiful birthdays, anniversaries, and surprise celebrations throughout our journey.",
+        giftTarget: 3000
       }
     ]
   },
