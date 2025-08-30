@@ -28,7 +28,7 @@ function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-rose-600">The giftspace</h1>
+              <h1 className="text-2xl font-bold text-slate-900">The giftspace</h1>
               <span className="ml-3 text-sm text-gray-600">Beautiful Wedding Registries</span>
             </div>
             <div className="flex items-center gap-4">
