@@ -403,7 +403,7 @@ export default function CreateRegistry() {
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex-1">
                           <Label className="text-xs">Title</Label>
-                          <Input value={f.title} onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, title: e.target.value } : x)))} />
+                          <Input value={f.title} onChange={(e) => updateFund(f.id, { title: e.target.value })} />
                         </div>
                         <div className="mt-5">
                           {editingGoalId === f.id ? (
