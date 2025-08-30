@@ -66,8 +66,8 @@ function LandingPage() {
               <span className="text-blue-300">Gift Registry</span>
             </h1>
             <p className="text-xl mb-8 max-w-2xl text-slate-200 leading-relaxed">
-              Create beautiful gift funds for your special day. Let friends and 
-              family give meaningful gifts toward your dream honeymoon and future together.
+              Create beautiful gift funds for your special day. From tropical getaways to 
+              dream homes - let loved ones contribute to the experiences that matter most.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-start items-start">
