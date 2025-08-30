@@ -31,6 +31,14 @@ export async function apiMe() {
   const { data } = await api.get(`/auth/me`);
   return data;
 }
+export async function apiPasswordResetRequest({ email }) {
+  const { data } = await api.post(`/auth/password-reset/request`, { email });
+  return data;
+}
+export async function apiPasswordResetConfirm({ token, new_password }) {
+  const { data } = await api.post(`/auth/password-reset/confirm`, { token, new_password });
+  return data;
+}
 
 // Registry
 export async function createRegistry(registry) {
