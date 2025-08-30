@@ -153,11 +153,11 @@ export const MARKETING_COPY = {
   
   testimonials: [
     {
-      quote: "The giftspace made our wedding registry so much more meaningful. Our guests loved being able to contribute to our honeymoon dreams!",
+      quote: "The giftspace made our wedding gift registry so much more meaningful. Our guests loved being able to give toward our honeymoon dreams!",
       author: "Sarah & Ahmed"
     },
     {
-      quote: "Setting up our registry was incredibly easy, and the design was absolutely beautiful. Highly recommend!",
+      quote: "Setting up our gift registry was incredibly easy, and the design was absolutely beautiful. Our guests found it so thoughtful!",
       author: "Layla & Omar"  
     }
   ]
