@@ -42,8 +42,8 @@ export default function RegistryLanding() {
             </p>
             <div className="mt-6 flex gap-3">
               <Button size="lg" onClick={() => navigate("/create")}>Create your registry</Button>
-              <Button size="lg" variant="secondary" onClick={() => navigate("/r/amir-leila")}>
-                View sample
+              <Button size="lg" variant="secondary" onClick={() => navigate("/r/sarah-ahmed")}>
+                View preview
                 <ArrowRight className="size-4 ml-2" />
               </Button>
             </div>
