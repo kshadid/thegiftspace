@@ -203,37 +203,47 @@ export default function PublicRegistry() {
 
       {/* Registry Content */}
       <div className="max-w-6xl mx-auto px-4 py-12">
-        {/* Beautiful header with wedding info */}
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-semibold text-slate-800 mb-2">Choose a Gift to Give</h2>
-          <p className="text-slate-600">Select any gift fund below to contribute toward {registry.couple_names}'s dreams</p>
+        {/* Modern header with elegant styling */}
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-full text-sm font-medium mb-4">
+            <Heart className="w-4 h-4" />
+            Wedding Gift Registry
+          </div>
+          <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
+            Choose the Perfect Gift
+          </h2>
+          <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+            Select any gift fund below to contribute toward {registry.couple_names}'s dreams and help make their special moments unforgettable
+          </p>
         </div>
 
-        {/* Search and Filter */}
-        <div className="mb-6 flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <Input
-              placeholder="Search gift ideas..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-gray-600" />
-            <select 
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Categories</option>
-              {categories.map(cat => (
-                <option key={cat} value={cat}>
-                  {MARKETING_COPY.giftFundCategories[cat] || cat}
-                </option>
-              ))}
-            </select>
+        {/* Sleek Search and Filters */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-8">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Input
+                placeholder="Search gift ideas..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-12 h-12 border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-xl text-base"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Filter className="w-5 h-5 text-gray-600" />
+              <select 
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="h-12 px-4 border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-xl text-base min-w-48"
+              >
+                <option value="all">All Categories</option>
+                {categories.map(cat => (
+                  <option key={cat} value={cat}>
+                    {MARKETING_COPY.giftFundCategories[cat] || cat}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
