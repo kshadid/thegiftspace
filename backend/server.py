@@ -425,6 +425,117 @@ async def send_owner_notification(
         logging.error(f"Failed to send owner notification email to {owner_email}: {str(e)}")
         return None
 
+async def send_password_reset_email(
+    user_email: str,
+    user_name: str,
+    reset_token: str
+):
+    """Send a password reset email with reset token"""
+    if not RESEND_API_KEY:
+        logging.warning("Resend API key not configured, skipping email sending")
+        return
+    
+    try:
+        # Get domain from environment or use localhost for development
+        domain = os.environ.get('FRONTEND_DOMAIN', 'http://localhost:3000')
+        reset_url = f"{domain}/auth/reset-password?token={reset_token}"
+        
+        subject = "Reset your password - The giftspace"
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Password Reset</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; }}
+                .button {{ 
+                    display: inline-block; 
+                    background: #dc2626; 
+                    color: white; 
+                    padding: 12px 24px; 
+                    text-decoration: none; 
+                    border-radius: 5px; 
+                    font-weight: bold; 
+                    margin: 20px 0;
+                }}
+                .warning {{ background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0; }}
+                .footer {{ text-align: center; color: #666; font-size: 14px; margin-top: 30px; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h2 style="margin: 0; color: #dc2626;">The giftspace</h2>
+                    <p style="margin: 5px 0 0 0; color: #666;">Password Reset Request</p>
+                </div>
+                
+                <h3>Hello {user_name},</h3>
+                
+                <p>We received a request to reset your password for your giftspace account.</p>
+                
+                <p>Click the button below to reset your password:</p>
+                
+                <div style="text-align: center;">
+                    <a href="{reset_url}" class="button">Reset My Password</a>
+                </div>
+                
+                <div class="warning">
+                    <strong>Important:</strong> This link will expire in 1 hour for security reasons.
+                </div>
+                
+                <p>If you didn't request this password reset, you can safely ignore this email. Your password will not be changed.</p>
+                
+                <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
+                <p style="word-break: break-all; background: #f8f9fa; padding: 10px; border-radius: 3px;">{reset_url}</p>
+                
+                <div class="footer">
+                    <p>This email was sent by The giftspace</p>
+                    <p>If you need help, please contact our support team.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        text_content = f"""
+        Password Reset Request - The giftspace
+        
+        Hello {user_name},
+        
+        We received a request to reset your password for your giftspace account.
+        
+        To reset your password, please visit the following link:
+        {reset_url}
+        
+        This link will expire in 1 hour for security reasons.
+        
+        If you didn't request this password reset, you can safely ignore this email. Your password will not be changed.
+        
+        If you need help, please contact our support team.
+        
+        The giftspace Team
+        """
+        
+        params = {
+            "from": FROM_EMAIL,
+            "to": [user_email],
+            "subject": subject,
+            "html": html_content,
+            "text": text_content,
+        }
+        
+        email = resend.Emails.send(params)
+        logging.info(f"Password reset email sent to {user_email}, email_id: {email.get('id', 'unknown')}")
+        return email
+        
+    except Exception as e:
+        logging.error(f"Failed to send password reset email to {user_email}: {str(e)}")
+        return None
+
 # ===== Auth helpers =====
 async def find_user_by_email(email: str) -> Optional[dict]:
     return await db.users.find_one({"email": email.lower()})
