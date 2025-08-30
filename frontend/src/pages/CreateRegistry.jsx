@@ -419,7 +419,7 @@ export default function CreateRegistry() {
                       </div>
                       <div>
                         <Label className="text-xs">Description</Label>
-                        <Textarea value={f.description} onChange={(e) => setFunds((all) => all.map((x) => (x.id === f.id ? { ...x, description: e.target.value } : x)))} />
+                        <Textarea value={f.description} onChange={(e) => updateFund(f.id, { description: e.target.value })} />
                       </div>
                       <div className="grid grid-cols-3 gap-3">
                         <div>
