@@ -21,7 +21,7 @@ import { getAccessToken } from "../lib/api";
 import { Plus, Trash2, Eye, EyeOff, ArrowDownToLine, GripVertical, UserPlus, X, Upload as UploadIcon, Copy, Pin, ChevronUp, ChevronDown, Cog } from "lucide-react";
 import { createRegistry as apiCreateRegistry, updateRegistry as apiUpdateRegistry, bulkUpsertFunds, getRegistryAnalytics, exportRegistryCSV, getRegistryById, addCollaborator, removeCollaborator } from "../lib/api";
 import { uploadFileChunked } from "../lib/uploads";
-import { PROFESSIONAL_COPY, getRandomFundSuggestion } from "../utils/professionalCopy";
+import { PROFESSIONAL_COPY, getRandomFundSuggestion } from "../utils/copyContent";
 import { DEFAULT_REGISTRY_IMAGES, getRandomImageByCategory, getRandomRegistryImage } from "../utils/defaultImages";
 import ImageSelector from "../components/ImageSelector";
 
