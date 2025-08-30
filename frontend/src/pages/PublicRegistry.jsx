@@ -13,6 +13,7 @@ import { useToast } from "../hooks/use-toast";
 import { Heart, Gift, Users, Calendar, MapPin, Search, Filter } from "lucide-react";
 import { getPublicRegistry, createContribution } from "../lib/api";
 import { PROFESSIONAL_COPY, formatCurrency } from "../utils/professionalCopy";
+import { MARKETING_COPY } from "../utils/copyContent";
 import Footer from "../components/layout/Footer";
 
 export default function PublicRegistry() {
