@@ -47,18 +47,18 @@ export const PROFESSIONAL_COPY = {
     home: [
       {
         title: "Dream Kitchen Renovation",
-        description: "Help us create the heart of our home where we'll cook, laugh, and make memories.",
-        goal: 7500
+        description: "Gift us the heart of our home where we'll cook, laugh, and make memories together.",
+        giftTarget: 7500
       },
       {
         title: "Cozy Living Room Setup",
-        description: "Beautiful furniture and décor to make our house feel like home.",
-        goal: 4000
+        description: "Beautiful furniture and décor to make our house feel like home - made possible by your generosity.",
+        giftTarget: 4000
       },
       {
         title: "Master Bedroom Sanctuary", 
-        description: "Create our perfect retreat with luxurious bedding and thoughtful touches.",
-        goal: 3500
+        description: "Your gift helps us create our perfect retreat with luxurious bedding and thoughtful touches.",
+        giftTarget: 3500
       }
     ],
     
